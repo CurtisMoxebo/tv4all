@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { LanguageSelector } from '../components/LanguageSelector';
+import { Logo } from '../components/Logo';
 
 export const LoginPage: React.FC = () => {
   const { t } = useTranslation();
@@ -44,12 +45,9 @@ export const LoginPage: React.FC = () => {
       </div>
 
       <div className="w-full max-w-sm border border-neutral-800 rounded-2xl p-8 bg-black shadow-2xl space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-white">tv4all</h1>
-          <p className="text-xs text-neutral-400">
-            {t('auth.title')}
-          </p>
+        {/* Header with Logo */}
+        <div className="text-center">
+          <Logo size="lg" />
         </div>
 
         {/* Error notification */}
