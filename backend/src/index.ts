@@ -1,8 +1,10 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import authRoutes from './routes/authRoutes';
 import channelRoutes from './routes/channelRoutes';
 import groupRoutes from './routes/groupRoutes';
+import { requireAuth } from './middleware/authMiddleware';
 
 dotenv.config();
 
@@ -14,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health Check
+// Health Check (Public)
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
@@ -23,9 +25,12 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
-// API Routes
-app.use('/api/channels', channelRoutes);
-app.use('/api/groups', groupRoutes);
+// Authentication routes (Public login, protected /me)
+app.use('/api/auth', authRoutes);
+
+// Protected API Routes (require valid 12-hour authentication token)
+app.use('/api/channels', requireAuth, channelRoutes);
+app.use('/api/groups', requireAuth, groupRoutes);
 
 // API Root info
 app.get('/api', (_req: Request, res: Response) => {
@@ -34,6 +39,7 @@ app.get('/api', (_req: Request, res: Response) => {
     version: '1.0.0',
     endpoints: {
       health: '/api/health',
+      auth: '/api/auth/login',
       channels: '/api/channels',
       groups: '/api/groups'
     }
