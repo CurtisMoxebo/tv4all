@@ -13,7 +13,7 @@ interface ConnectedClient {
 }
 
 const DISCONNECT_GRACE_PERIOD_MS = 2500; // 2.5 seconds grace period for brief reconnections
-const MAX_BUFFER_BYTES = 4 * 1024 * 1024; // 4 MB ring buffer for immediate playback on new viewer join
+const MAX_BUFFER_BYTES = 12 * 1024 * 1024; // 12 MB ring buffer for smooth, uninterrupted playback
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 export class ChannelBroadcast extends EventEmitter {
@@ -79,6 +79,11 @@ export class ChannelBroadcast extends EventEmitter {
     }
 
     const clientIp = loggerService.getClientIp(req);
+
+    // Disable TCP Nagle's algorithm for low-latency, stutter-free chunk delivery
+    if (req.socket) {
+      req.socket.setNoDelay(true);
+    }
 
     // Set streaming HTTP headers
     res.writeHead(200, {
@@ -382,9 +387,9 @@ export class ChannelBroadcast extends EventEmitter {
           }
         }
 
-        // Fast join: on initial startup, skip older segments and only fetch latest 2
-        if (seenSegments.size === 0 && segmentUrls.length > 2) {
-          const toSkip = segmentUrls.slice(0, segmentUrls.length - 2);
+        // Fast join: on initial startup, pre-buffer latest 4 segments so client starts with healthy buffer cushion
+        if (seenSegments.size === 0 && segmentUrls.length > 4) {
+          const toSkip = segmentUrls.slice(0, segmentUrls.length - 4);
           for (const s of toSkip) {
             seenSegments.add(s);
           }
@@ -426,8 +431,8 @@ export class ChannelBroadcast extends EventEmitter {
           }
         }
 
-        // Wait before refreshing playlist (approx target duration * 0.75)
-        const waitMs = Math.max(1000, Math.floor(targetDurationSec * 750));
+        // Rapid polling (1 - 1.5s) to detect new upstream segments immediately as they are published
+        const waitMs = Math.max(800, Math.min(1500, Math.floor(targetDurationSec * 400)));
         await new Promise(r => setTimeout(r, waitMs));
       } catch (err) {
         if (signal.aborted) break;

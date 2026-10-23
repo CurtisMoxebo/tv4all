@@ -15,11 +15,7 @@ class ChannelService {
     return process.env.CHANNELS_M3U_URL || process.env.M3U_URL || DEFAULT_M3U_URL;
   }
 
-  /**
-   * Fetches M3U content from remote URL, with local file fallback if needed.
-   */
-  private async fetchM3UContent(): Promise<string> {
-    // Check local playlist first
+  private getLocalPlaylistPath(): string | null {
     const potentialPaths = [
       path.resolve(process.cwd(), '..', 'm3u', 'index.m3u8'),
       path.resolve(process.cwd(), 'm3u', 'index.m3u8'),
@@ -28,9 +24,21 @@ class ChannelService {
 
     for (const localPath of potentialPaths) {
       if (fs.existsSync(localPath)) {
-        console.log(`[ChannelService] Loaded local playlist from ${localPath}`);
-        return fs.readFileSync(localPath, 'utf-8');
+        return localPath;
       }
+    }
+    return null;
+  }
+
+  /**
+   * Fetches M3U content from remote URL, with local file fallback if needed.
+   */
+  private async fetchM3UContent(): Promise<string> {
+    // Check local playlist first
+    const localPath = this.getLocalPlaylistPath();
+    if (localPath) {
+      console.log(`[ChannelService] Loaded local playlist from ${localPath}`);
+      return fs.readFileSync(localPath, 'utf-8');
     }
 
     try {
@@ -57,7 +65,20 @@ class ChannelService {
    * Reloads and parses the channels playlist.
    */
   public async loadChannels(force: boolean = false): Promise<Channel[]> {
-    const isCacheExpired = Date.now() - this.lastFetched > CACHE_TTL_MS;
+    const localPath = this.getLocalPlaylistPath();
+    let isLocalModified = false;
+    if (localPath) {
+      try {
+        const stats = fs.statSync(localPath);
+        if (stats.mtimeMs > this.lastFetched) {
+          isLocalModified = true;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const isCacheExpired = Date.now() - this.lastFetched > CACHE_TTL_MS || isLocalModified;
 
     if (!force && this.channels.length > 0 && !isCacheExpired) {
       return this.channels;
