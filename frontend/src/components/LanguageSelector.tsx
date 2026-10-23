@@ -43,11 +43,11 @@ export const LanguageSelector: React.FC = () => {
         onClick={() => setIsOpen(prev => !prev)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="inline-flex items-center space-x-2 px-3 py-1.5 text-xs font-medium text-white bg-black border border-neutral-800 rounded-lg hover:border-neutral-700 hover:bg-neutral-950 transition-colors cursor-pointer"
+        className="inline-flex items-center space-x-2 px-3 py-1.5 text-xs font-medium text-white bg-[#0d1527] border border-[#1e2c47] rounded-lg hover:border-slate-600 hover:bg-[#151f32] transition-colors cursor-pointer"
       >
         <span>{currentOption.label}</span>
         <svg
-          className={`w-3.5 h-3.5 text-neutral-400 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -57,7 +57,7 @@ export const LanguageSelector: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1.5 w-32 bg-black border border-neutral-800 rounded-lg shadow-2xl py-1 z-50">
+        <div className="absolute right-0 mt-1.5 w-32 bg-[#0d1527] border border-[#1e2c47] rounded-lg shadow-2xl py-1 z-50">
           {languages.map(({ code, label }) => {
             const isSelected = currentLang === code;
             return (
@@ -67,8 +67,8 @@ export const LanguageSelector: React.FC = () => {
                 onClick={() => handleSelect(code)}
                 className={`w-full text-left px-3 py-1.5 text-xs transition-colors cursor-pointer flex items-center justify-between ${
                   isSelected
-                    ? 'text-white font-semibold bg-neutral-900'
-                    : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+                    ? 'text-white font-semibold bg-[#151f32]'
+                    : 'text-slate-400 hover:text-white hover:bg-[#151f32]/60'
                 }`}
               >
                 <span>{label}</span>

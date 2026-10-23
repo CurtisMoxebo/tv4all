@@ -17,7 +17,7 @@ export const HomePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center select-none">
+    <div className="min-h-screen bg-[#080c16] text-white flex items-center justify-center select-none">
       <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white">
         tv4all
       </h1>
