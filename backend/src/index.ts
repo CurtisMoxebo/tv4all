@@ -15,14 +15,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health Check
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({
-    status: 'ok',
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString()
-  });
-});
-
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
@@ -31,19 +23,17 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
-// Channel & Group endpoints
+// API Routes
 app.use('/api/channels', channelRoutes);
-app.use('/channels', channelRoutes);
 app.use('/api/groups', groupRoutes);
-app.use('/groups', groupRoutes);
 
-// Root route
-app.get('/', (_req: Request, res: Response) => {
+// API Root info
+app.get('/api', (_req: Request, res: Response) => {
   res.json({
     name: 'tv4all IPTV relay backend',
     version: '1.0.0',
     endpoints: {
-      health: '/health',
+      health: '/api/health',
       channels: '/api/channels',
       groups: '/api/groups'
     }
