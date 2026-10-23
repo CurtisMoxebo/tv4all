@@ -10,10 +10,9 @@ class ChannelService {
   private channels: Channel[] = [];
   private lastFetched: number = 0;
   private fetchPromise: Promise<Channel[]> | null = null;
-  private readonly m3uUrl: string;
 
-  constructor() {
-    this.m3uUrl = process.env.M3U_URL || DEFAULT_M3U_URL;
+  public get m3uUrl(): string {
+    return process.env.CHANNELS_M3U_URL || process.env.M3U_URL || DEFAULT_M3U_URL;
   }
 
   /**
