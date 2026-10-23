@@ -5,13 +5,12 @@ import { SupportedLanguage } from '../i18n';
 interface LanguageOption {
   code: SupportedLanguage;
   label: string;
-  flag: string;
 }
 
 const languages: LanguageOption[] = [
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' }
+  { code: 'en', label: 'EN' },
+  { code: 'fr', label: 'FR' },
+  { code: 'es', label: 'ES' }
 ];
 
 export const LanguageSelector: React.FC = () => {
@@ -23,22 +22,21 @@ export const LanguageSelector: React.FC = () => {
   };
 
   return (
-    <div className="inline-flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 shadow-inner">
-      {languages.map(({ code, label, flag }) => {
+    <div className="inline-flex items-center bg-black border border-neutral-800 rounded-lg p-0.5">
+      {languages.map(({ code, label }) => {
         const isActive = currentLang === code;
         return (
           <button
             key={code}
+            type="button"
             onClick={() => handleLanguageChange(code)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 flex items-center space-x-1.5 cursor-pointer ${
+            className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors cursor-pointer ${
               isActive
-                ? 'bg-indigo-600 text-white shadow'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'bg-white text-black'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
             }`}
-            title={label}
           >
-            <span>{flag}</span>
-            <span>{label}</span>
+            {label}
           </button>
         );
       })}
@@ -47,4 +45,3 @@ export const LanguageSelector: React.FC = () => {
 };
 
 export default LanguageSelector;
-

@@ -1,20 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import { LanguageSelector } from '../components/LanguageSelector';
 
 export const LoginPage: React.FC = () => {
   const { t } = useTranslation();
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState('tv4all');
-  const [password, setPassword] = useState('123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // If already logged in, redirect to home
-  React.useEffect(() => {
+  // If already authenticated, redirect to home page
+  useEffect(() => {
     if (isAuthenticated) {
       navigate('/', { replace: true });
     }
@@ -36,43 +37,46 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6">
-        <div className="text-center space-y-2">
-          <div className="inline-flex w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 items-center justify-center shadow-lg shadow-indigo-500/30 mb-2">
-            <span className="text-white font-black text-xl">TV</span>
-          </div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">
+    <div className="min-h-screen bg-black text-white flex flex-col justify-center items-center px-4 relative">
+      {/* Top right language switch */}
+      <div className="absolute top-6 right-6">
+        <LanguageSelector />
+      </div>
+
+      <div className="w-full max-w-sm border border-neutral-800 rounded-2xl p-8 bg-black shadow-2xl space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-white">tv4all</h1>
+          <p className="text-xs text-neutral-400">
             {t('auth.title')}
-          </h2>
-          <p className="text-xs text-slate-400">
-            {t('auth.tokenValid12h')}
           </p>
         </div>
 
+        {/* Error notification */}
         {error && (
-          <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-800/60 text-rose-300 text-xs text-center font-medium">
+          <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-700 text-neutral-200 text-xs text-center font-medium">
             {error}
           </div>
         )}
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               {t('auth.username')}
             </label>
             <input
               type="text"
               required
+              autoFocus
               value={username}
               onChange={e => setUsername(e.target.value)}
-              placeholder="tv4all"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm transition-all"
+              className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-600 focus:outline-none focus:border-white focus:ring-1 focus:ring-white text-sm transition-colors"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               {t('auth.password')}
             </label>
             <input
@@ -80,8 +84,7 @@ export const LoginPage: React.FC = () => {
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="••••••"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm transition-all"
+              className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-600 focus:outline-none focus:border-white focus:ring-1 focus:ring-white text-sm transition-colors"
             />
           </div>
 
@@ -89,18 +92,12 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium rounded-xl shadow-lg shadow-indigo-600/30 transition-all duration-150 cursor-pointer disabled:opacity-50 text-sm"
+              className="w-full py-2.5 px-4 bg-white hover:bg-neutral-200 active:bg-neutral-300 text-black font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-50 text-sm"
             >
               {loading ? t('auth.signingIn') : t('auth.loginButton')}
             </button>
           </div>
         </form>
-
-        <div className="pt-2 border-t border-slate-800/80 text-center">
-          <p className="text-[11px] text-slate-500">
-            Default credentials: <code className="text-slate-400 font-mono">tv4all</code> / <code className="text-slate-400 font-mono">123</code>
-          </p>
-        </div>
       </div>
     </div>
   );
