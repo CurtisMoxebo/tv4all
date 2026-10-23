@@ -5,7 +5,9 @@ import authRoutes from './routes/authRoutes';
 import channelRoutes from './routes/channelRoutes';
 import groupRoutes from './routes/groupRoutes';
 import streamRoutes from './routes/streamRoutes';
+import logRoutes from './routes/logRoutes';
 import { requireAuth } from './middleware/authMiddleware';
+import { requestLogger } from './middleware/loggerMiddleware';
 import { broadcastManager } from './services/broadcast/BroadcastManager';
 
 dotenv.config();
@@ -17,6 +19,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(requestLogger);
 
 // Health Check (Public)
 app.get('/api/health', (_req: Request, res: Response) => {
@@ -34,6 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/channels', requireAuth, channelRoutes);
 app.use('/api/groups', requireAuth, groupRoutes);
 app.use('/api/stream', requireAuth, streamRoutes);
+app.use('/api/logs', requireAuth, logRoutes);
 app.use('/api/broadcasts', requireAuth, (_req: Request, res: Response) => {
   res.json(broadcastManager.getActiveBroadcasts());
 });
@@ -49,7 +53,8 @@ app.get('/api', (_req: Request, res: Response) => {
       channels: '/api/channels',
       groups: '/api/groups',
       stream: '/api/stream/:channelId',
-      broadcasts: '/api/broadcasts'
+      broadcasts: '/api/broadcasts',
+      logs: '/api/logs'
     }
   });
 });

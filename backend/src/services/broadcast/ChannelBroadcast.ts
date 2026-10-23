@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { Channel } from '../../types/channel';
 import { BroadcastStatus, BroadcastSummary } from '../../types/broadcast';
+import { loggerService } from '../loggerService';
 
 interface ConnectedClient {
   id: string;
@@ -54,7 +55,7 @@ export class ChannelBroadcast extends EventEmitter {
     this.abortController = new AbortController();
     this.loopRunning = true;
 
-    console.log(`[Broadcast ${this.channelId}] Starting broadcast from upstream: ${this.channel.url}`);
+    loggerService.info(`[Broadcast ${this.channelId}] Starting broadcast from upstream: ${this.channel.url}`);
 
     // Run upstream worker loop asynchronously
     this.runUpstreamLoop().catch(err => {
@@ -76,7 +77,7 @@ export class ChannelBroadcast extends EventEmitter {
       console.log(`[Broadcast ${this.channelId}] Reconnection before timeout; keeping broadcast alive.`);
     }
 
-    const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
+    const clientIp = loggerService.getClientIp(req);
 
     // Set streaming HTTP headers
     res.writeHead(200, {
@@ -113,7 +114,7 @@ export class ChannelBroadcast extends EventEmitter {
     };
 
     this.clients.set(clientId, client);
-    console.log(`[Broadcast ${this.channelId}] Client ${clientId} joined (IP: ${clientIp}). Total viewers: ${this.clients.size}`);
+    loggerService.info(`[Broadcast ${this.channelId}] Client ${clientId} joined. Total viewers: ${this.clients.size}`, clientIp);
 
     // Handle client disconnect
     const handleClose = () => {
@@ -135,7 +136,7 @@ export class ChannelBroadcast extends EventEmitter {
     }
 
     this.clients.delete(clientId);
-    console.log(`[Broadcast ${this.channelId}] Client ${clientId} disconnected. Remaining viewers: ${this.clients.size}`);
+    loggerService.info(`[Broadcast ${this.channelId}] Client ${clientId} disconnected. Remaining viewers: ${this.clients.size}`, client.ip);
 
     try {
       if (!client.res.writableEnded) {
@@ -383,7 +384,7 @@ export class ChannelBroadcast extends EventEmitter {
       return;
     }
 
-    console.log(`[Broadcast ${this.channelId}] Stopping broadcast...`);
+    loggerService.info(`[Broadcast ${this.channelId}] Stopping broadcast...`);
     this.status = 'closed';
     this.loopRunning = false;
 
