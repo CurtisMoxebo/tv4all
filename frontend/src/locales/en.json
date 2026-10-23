@@ -1,0 +1,49 @@
+{
+  "app": {
+    "title": "tv4all Streaming",
+    "subtitle": "Single-source IPTV relay and broadcasting platform",
+    "tagline": "Watch IPTV streams shared across multiple viewers"
+  },
+  "nav": {
+    "channels": "Channels",
+    "broadcasts": "Broadcasts",
+    "logs": "Logs",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "auth": {
+    "title": "Authentication",
+    "username": "Username",
+    "password": "Password",
+    "loginButton": "Sign In",
+    "signingIn": "Signing in...",
+    "invalidCredentials": "Invalid username or password",
+    "loggedInAs": "Logged in as {{username}}",
+    "tokenValid12h": "Token valid for 12 hours"
+  },
+  "channels": {
+    "title": "Available Channels",
+    "searchPlaceholder": "Search channels by name or ID...",
+    "allGroups": "All Categories",
+    "noChannels": "No channels found",
+    "viewCount": "{{count}} viewer",
+    "viewCount_plural": "{{count}} viewers",
+    "watchLive": "Watch Live",
+    "live": "LIVE"
+  },
+  "player": {
+    "connecting": "Connecting to stream...",
+    "broadcasting": "Live broadcast active",
+    "error": "Failed to load stream",
+    "offline": "Channel offline or unreachable"
+  },
+  "common": {
+    "language": "Language",
+    "english": "English",
+    "french": "French",
+    "spanish": "Spanish",
+    "loading": "Loading...",
+    "refresh": "Refresh"
+  }
+}
+

@@ -1,0 +1,49 @@
+{
+  "app": {
+    "title": "tv4all Streaming",
+    "subtitle": "Plateforme de relais et diffusion IPTV source unique",
+    "tagline": "Regardez des flux IPTV partagés entre plusieurs spectateurs"
+  },
+  "nav": {
+    "channels": "Chaînes",
+    "broadcasts": "Diffusions",
+    "logs": "Journaux",
+    "login": "Connexion",
+    "logout": "Déconnexion"
+  },
+  "auth": {
+    "title": "Authentification",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "loginButton": "Se connecter",
+    "signingIn": "Connexion en cours...",
+    "invalidCredentials": "Nom d'utilisateur ou mot de passe invalide",
+    "loggedInAs": "Connecté en tant que {{username}}",
+    "tokenValid12h": "Jeton valide pendant 12 heures"
+  },
+  "channels": {
+    "title": "Chaînes disponibles",
+    "searchPlaceholder": "Rechercher des chaînes par nom ou identifiant...",
+    "allGroups": "Toutes les catégories",
+    "noChannels": "Aucune chaîne trouvée",
+    "viewCount": "{{count}} spectateur",
+    "viewCount_plural": "{{count}} spectateurs",
+    "watchLive": "Regarder en direct",
+    "live": "EN DIRECT"
+  },
+  "player": {
+    "connecting": "Connexion au flux...",
+    "broadcasting": "Diffusion en direct active",
+    "error": "Échec du chargement du flux",
+    "offline": "Chaîne hors ligne ou inaccessible"
+  },
+  "common": {
+    "language": "Langue",
+    "english": "Anglais",
+    "french": "Français",
+    "spanish": "Espagnol",
+    "loading": "Chargement...",
+    "refresh": "Actualiser"
+  }
+}
+

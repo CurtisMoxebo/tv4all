@@ -1,0 +1,49 @@
+{
+  "app": {
+    "title": "tv4all Streaming",
+    "subtitle": "Plataforma de retransmisión y emisión IPTV de fuente única",
+    "tagline": "Mira transmisiones IPTV compartidas entre múltiples espectadores"
+  },
+  "nav": {
+    "channels": "Canales",
+    "broadcasts": "Emisiones",
+    "logs": "Registros",
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión"
+  },
+  "auth": {
+    "title": "Autenticación",
+    "username": "Usuario",
+    "password": "Contraseña",
+    "loginButton": "Iniciar sesión",
+    "signingIn": "Iniciando sesión...",
+    "invalidCredentials": "Usuario o contraseña inválidos",
+    "loggedInAs": "Conectado como {{username}}",
+    "tokenValid12h": "Token válido durante 12 horas"
+  },
+  "channels": {
+    "title": "Canales disponibles",
+    "searchPlaceholder": "Buscar canales por nombre o ID...",
+    "allGroups": "Todas las categorías",
+    "noChannels": "No se encontraron canales",
+    "viewCount": "{{count}} espectador",
+    "viewCount_plural": "{{count}} espectadores",
+    "watchLive": "Ver en vivo",
+    "live": "EN VIVO"
+  },
+  "player": {
+    "connecting": "Conectando a la transmisión...",
+    "broadcasting": "Emisión en vivo activa",
+    "error": "Error al cargar la transmisión",
+    "offline": "Canal fuera de línea o inaccesible"
+  },
+  "common": {
+    "language": "Idioma",
+    "english": "Inglés",
+    "french": "Francés",
+    "spanish": "Español",
+    "loading": "Cargando...",
+    "refresh": "Actualizar"
+  }
+}
+
