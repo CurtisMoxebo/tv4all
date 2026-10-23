@@ -1,7 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { channelService } from '../services/channelService';
+import { broadcastManager } from '../services/broadcast/BroadcastManager';
 
 const router = Router();
+let streamClientCounter = 0;
 
 /**
  * GET /api/channels
@@ -40,6 +42,29 @@ router.get('/groups', async (req: Request, res: Response, next: NextFunction) =>
 
     const groups = await channelService.getGroups(force);
     res.json(groups);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/channels/:id/stream
+ * Connects directly to the live broadcast for this channel.
+ */
+router.get('/:id/stream', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const channel = await channelService.getChannelById(req.params.id);
+    if (!channel) {
+      return res.status(404).json({ error: `Channel '${req.params.id}' not found` });
+    }
+
+    if (!channel.url) {
+      return res.status(400).json({ error: `Channel '${req.params.id}' has no stream URL configured` });
+    }
+
+    const clientId = `client-${++streamClientCounter}-${Date.now().toString(36)}`;
+    const broadcast = broadcastManager.getOrCreateBroadcast(channel);
+    broadcast.addClient(clientId, req, res);
   } catch (error) {
     next(error);
   }

@@ -4,7 +4,9 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import channelRoutes from './routes/channelRoutes';
 import groupRoutes from './routes/groupRoutes';
+import streamRoutes from './routes/streamRoutes';
 import { requireAuth } from './middleware/authMiddleware';
+import { broadcastManager } from './services/broadcast/BroadcastManager';
 
 dotenv.config();
 
@@ -31,6 +33,10 @@ app.use('/api/auth', authRoutes);
 // Protected API Routes (require valid 12-hour authentication token)
 app.use('/api/channels', requireAuth, channelRoutes);
 app.use('/api/groups', requireAuth, groupRoutes);
+app.use('/api/stream', requireAuth, streamRoutes);
+app.use('/api/broadcasts', requireAuth, (_req: Request, res: Response) => {
+  res.json(broadcastManager.getActiveBroadcasts());
+});
 
 // API Root info
 app.get('/api', (_req: Request, res: Response) => {
@@ -41,7 +47,9 @@ app.get('/api', (_req: Request, res: Response) => {
       health: '/api/health',
       auth: '/api/auth/login',
       channels: '/api/channels',
-      groups: '/api/groups'
+      groups: '/api/groups',
+      stream: '/api/stream/:channelId',
+      broadcasts: '/api/broadcasts'
     }
   });
 });
@@ -65,6 +73,7 @@ const server = app.listen(PORT, () => {
 // Graceful shutdown
 const shutdown = (signal: string) => {
   console.log(`[Server] Received ${signal}, closing server gracefully...`);
+  broadcastManager.stopAll();
   server.close(() => {
     console.log('[Server] HTTP server closed');
     process.exit(0);
