@@ -25,6 +25,27 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 /**
+ * GET /api/channels/groups
+ * Returns available channel groups.
+ */
+router.get('/groups', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const force = req.query.refresh === 'true' || req.query.force === 'true';
+    const detailed = req.query.detailed === 'true' || req.query.stats === 'true';
+
+    if (detailed) {
+      const groups = await channelService.getGroupsWithStats(force);
+      return res.json(groups);
+    }
+
+    const groups = await channelService.getGroups(force);
+    res.json(groups);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * GET /api/channels/:id
  * Returns a specific channel's details.
  */

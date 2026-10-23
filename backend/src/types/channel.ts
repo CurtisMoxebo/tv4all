@@ -8,3 +8,9 @@ export interface Channel {
 
 export type ChannelSummary = Omit<Channel, 'url'>;
 
+export interface GroupInfo {
+  name: string;
+  count: number;
+}
+
+

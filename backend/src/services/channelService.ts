@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Channel, ChannelSummary } from '../types/channel';
+import { Channel, ChannelSummary, GroupInfo } from '../types/channel';
 import { parseM3U } from '../utils/m3uParser';
 
 const DEFAULT_M3U_URL = 'https://raw.githubusercontent.com/CurtisMoxebo/tv4all/refs/heads/main/m3u/index.m3u8';
@@ -117,6 +117,39 @@ class ChannelService {
   public async getChannelById(id: string): Promise<Channel | undefined> {
     const channels = await this.loadChannels();
     return channels.find(c => c.id === id);
+  }
+
+  /**
+   * Returns list of unique channel group names.
+   */
+  public async getGroups(force?: boolean): Promise<string[]> {
+    const channels = await this.loadChannels(force);
+    const groupsSet = new Set<string>();
+
+    for (const channel of channels) {
+      if (channel.group) {
+        groupsSet.add(channel.group);
+      }
+    }
+
+    return Array.from(groupsSet).sort((a, b) => a.localeCompare(b));
+  }
+
+  /**
+   * Returns list of unique groups with channel counts.
+   */
+  public async getGroupsWithStats(force?: boolean): Promise<GroupInfo[]> {
+    const channels = await this.loadChannels(force);
+    const groupCounts = new Map<string, number>();
+
+    for (const channel of channels) {
+      const g = channel.group || 'General';
+      groupCounts.set(g, (groupCounts.get(g) || 0) + 1);
+    }
+
+    return Array.from(groupCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 }
 

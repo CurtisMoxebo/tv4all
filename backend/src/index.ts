@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import channelRoutes from './routes/channelRoutes';
+import groupRoutes from './routes/groupRoutes';
 
 dotenv.config();
 
@@ -30,9 +31,11 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
-// Channel endpoints
+// Channel & Group endpoints
 app.use('/api/channels', channelRoutes);
 app.use('/channels', channelRoutes);
+app.use('/api/groups', groupRoutes);
+app.use('/groups', groupRoutes);
 
 // Root route
 app.get('/', (_req: Request, res: Response) => {
@@ -41,7 +44,8 @@ app.get('/', (_req: Request, res: Response) => {
     version: '1.0.0',
     endpoints: {
       health: '/health',
-      channels: '/api/channels'
+      channels: '/api/channels',
+      groups: '/api/groups'
     }
   });
 });
