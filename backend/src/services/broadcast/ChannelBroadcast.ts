@@ -13,7 +13,8 @@ interface ConnectedClient {
 }
 
 const DISCONNECT_GRACE_PERIOD_MS = 2500; // 2.5 seconds grace period for brief reconnections
-const MAX_BUFFER_BYTES = 1024 * 1024; // 1 MB ring buffer for immediate playback
+const MAX_BUFFER_BYTES = 4 * 1024 * 1024; // 4 MB ring buffer for immediate playback on new viewer join
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 export class ChannelBroadcast extends EventEmitter {
   public readonly channel: Channel;
@@ -208,7 +209,7 @@ export class ChannelBroadcast extends EventEmitter {
     const probeRes = await fetch(this.channel.url, {
       signal,
       headers: {
-        'User-Agent': 'tv4all-relay/1.0.0 (Mozilla/5.0 compatible)'
+        'User-Agent': USER_AGENT
       }
     });
 
@@ -235,6 +236,67 @@ export class ChannelBroadcast extends EventEmitter {
     } else {
       await this.runContinuousStreamLoop(probeRes, signal);
     }
+  }
+
+  /**
+   * Resolves an HLS Master Playlist to the actual child Media Playlist URL.
+   */
+  private async resolveMediaPlaylistUrl(initialUrl: string, signal: AbortSignal): Promise<string> {
+    let currentUrl = initialUrl;
+    let attempts = 0;
+
+    while (attempts < 3) {
+      attempts++;
+      try {
+        const res = await fetch(currentUrl, {
+          signal,
+          headers: { 'User-Agent': USER_AGENT }
+        });
+
+        if (!res.ok) {
+          return currentUrl;
+        }
+
+        const text = await res.text();
+        if (!text.includes('#EXT-X-STREAM-INF')) {
+          return currentUrl;
+        }
+
+        const lines = text.split(/\r?\n/);
+        let selectedVariant: string | null = null;
+        let highestBandwidth = -1;
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line.startsWith('#EXT-X-STREAM-INF')) {
+            const bwMatch = line.match(/BANDWIDTH=(\d+)/i);
+            const bw = bwMatch ? parseInt(bwMatch[1], 10) : 0;
+
+            for (let j = i + 1; j < lines.length; j++) {
+              const nextLine = lines[j].trim();
+              if (nextLine && !nextLine.startsWith('#')) {
+                if (bw > highestBandwidth || !selectedVariant) {
+                  highestBandwidth = bw;
+                  selectedVariant = nextLine;
+                }
+                break;
+              }
+            }
+          }
+        }
+
+        if (selectedVariant) {
+          currentUrl = new URL(selectedVariant, currentUrl).toString();
+          console.log(`[Broadcast ${this.channelId}] Resolved variant playlist: ${currentUrl}`);
+        } else {
+          break;
+        }
+      } catch {
+        break;
+      }
+    }
+
+    return currentUrl;
   }
 
   /**
@@ -275,23 +337,32 @@ export class ChannelBroadcast extends EventEmitter {
     this.contentType = 'video/mp2t';
     const seenSegments = new Set<string>();
     let targetDurationSec = 2;
+    let mediaPlaylistUrl = await this.resolveMediaPlaylistUrl(this.channel.url, signal);
 
     while (this.loopRunning && !signal.aborted) {
       try {
-        const playlistRes = await fetch(this.channel.url, {
+        const playlistRes = await fetch(mediaPlaylistUrl, {
           signal,
           headers: {
-            'User-Agent': 'tv4all-relay/1.0.0'
+            'User-Agent': USER_AGENT
           }
         });
 
         if (!playlistRes.ok) {
           console.warn(`[Broadcast ${this.channelId}] Failed to fetch HLS playlist: HTTP ${playlistRes.status}`);
+          // Attempt re-resolving in case stream URL expired
+          mediaPlaylistUrl = await this.resolveMediaPlaylistUrl(this.channel.url, signal);
           await new Promise(r => setTimeout(r, 2000));
           continue;
         }
 
         const playlistText = await playlistRes.text();
+
+        // If returned text is still master playlist, re-resolve
+        if (playlistText.includes('#EXT-X-STREAM-INF')) {
+          mediaPlaylistUrl = await this.resolveMediaPlaylistUrl(mediaPlaylistUrl, signal);
+          continue;
+        }
 
         // Extract target duration if specified
         const targetMatch = playlistText.match(/#EXT-X-TARGETDURATION:\s*(\d+)/i);
@@ -299,15 +370,23 @@ export class ChannelBroadcast extends EventEmitter {
           targetDurationSec = Math.max(1, parseInt(targetMatch[1], 10));
         }
 
-        // Extract segment lines (lines that do not start with #)
+        // Extract segment lines (lines that do not start with # and do not end in .m3u8)
         const lines = playlistText.split(/\r?\n/);
         const segmentUrls: string[] = [];
 
         for (const line of lines) {
           const trimmed = line.trim();
-          if (trimmed && !trimmed.startsWith('#')) {
-            const absoluteUrl = new URL(trimmed, this.channel.url).toString();
+          if (trimmed && !trimmed.startsWith('#') && !trimmed.includes('.m3u8')) {
+            const absoluteUrl = new URL(trimmed, mediaPlaylistUrl).toString();
             segmentUrls.push(absoluteUrl);
+          }
+        }
+
+        // Fast join: on initial startup, skip older segments and only fetch latest 2
+        if (seenSegments.size === 0 && segmentUrls.length > 2) {
+          const toSkip = segmentUrls.slice(0, segmentUrls.length - 2);
+          for (const s of toSkip) {
+            seenSegments.add(s);
           }
         }
 
@@ -319,7 +398,7 @@ export class ChannelBroadcast extends EventEmitter {
             seenSegments.add(segUrl);
 
             // Limit memory of seen segments set
-            if (seenSegments.size > 150) {
+            if (seenSegments.size > 200) {
               const first = seenSegments.values().next().value;
               if (first) seenSegments.delete(first);
             }
@@ -327,7 +406,7 @@ export class ChannelBroadcast extends EventEmitter {
             try {
               const segRes = await fetch(segUrl, {
                 signal,
-                headers: { 'User-Agent': 'tv4all-relay/1.0.0' }
+                headers: { 'User-Agent': USER_AGENT }
               });
 
               if (segRes.ok && segRes.body) {
@@ -347,8 +426,8 @@ export class ChannelBroadcast extends EventEmitter {
           }
         }
 
-        // Wait before refreshing playlist (approx target duration * 0.7)
-        const waitMs = Math.max(1000, targetDurationSec * 700);
+        // Wait before refreshing playlist (approx target duration * 0.75)
+        const waitMs = Math.max(1000, Math.floor(targetDurationSec * 750));
         await new Promise(r => setTimeout(r, waitMs));
       } catch (err) {
         if (signal.aborted) break;

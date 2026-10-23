@@ -15,6 +15,9 @@ export const App: React.FC = () => {
           {/* Login Route */}
           <Route path="/login" element={<LoginPage />} />
 
+          {/* Channel Deep-link Route */}
+          <Route path="/:channelId" element={<HomePage />} />
+
           {/* Catch-all redirect to Home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

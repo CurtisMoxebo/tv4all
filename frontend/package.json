@@ -13,6 +13,7 @@
     "framer-motion": "^14.6.0",
     "hls.js": "^1.7.3",
     "i18next": "^26.5.7",
+    "mpegts.js": "^1.8.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^17.1.5",

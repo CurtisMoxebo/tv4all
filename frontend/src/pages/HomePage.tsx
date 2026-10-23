@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +15,8 @@ export const HomePage: React.FC = () => {
   const { t } = useTranslation();
   const { token, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { channelId } = useParams<{ channelId?: string }>();
 
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,12 +50,12 @@ export const HomePage: React.FC = () => {
   // Mobile drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Redirect to login if unauthenticated
+  // Redirect to login if unauthenticated (preserve target URL)
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login', { replace: true });
+      navigate('/login', { replace: true, state: { from: location.pathname } });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location.pathname]);
 
   // Fetch channel list on mount
   useEffect(() => {
@@ -138,6 +140,29 @@ export const HomePage: React.FC = () => {
     return result;
   }, [channels, selectedCategory, searchQuery, sortBy]);
 
+  // Sync selectedChannel with channelId from URL
+  useEffect(() => {
+    if (!channels.length) return;
+
+    if (channelId) {
+      const decoded = decodeURIComponent(channelId).toLowerCase();
+      const matched = channels.find(
+        ch => ch.id.toLowerCase() === decoded || ch.name.toLowerCase() === decoded
+      );
+      if (matched) {
+        setSelectedChannel(matched);
+      }
+    } else {
+      setSelectedChannel(null);
+    }
+  }, [channelId, channels]);
+
+  const handleSelectChannel = (channel: Channel) => {
+    setSelectedChannel(channel);
+    setIsDrawerOpen(false); // Close drawer on mobile upon selection
+    navigate(`/${encodeURIComponent(channel.id)}`);
+  };
+
   if (!isAuthenticated) {
     return null;
   }
@@ -165,7 +190,9 @@ export const HomePage: React.FC = () => {
               </svg>
             </button>
 
-            <Logo size="md" />
+            <Link to="/" onClick={() => setSelectedChannel(null)}>
+              <Logo size="md" />
+            </Link>
           </div>
 
           {/* Right Controls */}
@@ -397,10 +424,7 @@ export const HomePage: React.FC = () => {
                         channel={channel}
                         isSelected={selectedChannel?.id === channel.id}
                         searchQuery={searchQuery}
-                        onSelect={ch => {
-                          setSelectedChannel(ch);
-                          setIsDrawerOpen(false); // Close drawer on mobile upon selection
-                        }}
+                        onSelect={handleSelectChannel}
                       />
                     </motion.div>
                   ))}
@@ -429,7 +453,10 @@ export const HomePage: React.FC = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSelectedChannel(null)}
+                  onClick={() => {
+                    setSelectedChannel(null);
+                    navigate('/');
+                  }}
                   className="px-3 py-1 text-xs text-slate-400 hover:text-white bg-[#151f32] border border-[#263756] rounded-lg transition-colors cursor-pointer shrink-0"
                 >
                   Close

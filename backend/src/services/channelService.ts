@@ -19,6 +19,20 @@ class ChannelService {
    * Fetches M3U content from remote URL, with local file fallback if needed.
    */
   private async fetchM3UContent(): Promise<string> {
+    // Check local playlist first
+    const potentialPaths = [
+      path.resolve(process.cwd(), '..', 'm3u', 'index.m3u8'),
+      path.resolve(process.cwd(), 'm3u', 'index.m3u8'),
+      path.resolve(__dirname, '../../../m3u/index.m3u8')
+    ];
+
+    for (const localPath of potentialPaths) {
+      if (fs.existsSync(localPath)) {
+        console.log(`[ChannelService] Loaded local playlist from ${localPath}`);
+        return fs.readFileSync(localPath, 'utf-8');
+      }
+    }
+
     try {
       console.log(`[ChannelService] Fetching playlist from ${this.m3uUrl}...`);
       const response = await fetch(this.m3uUrl, {
@@ -35,23 +49,7 @@ class ChannelService {
       console.log(`[ChannelService] Successfully fetched remote M3U (${text.length} bytes)`);
       return text;
     } catch (err) {
-      console.warn(`[ChannelService] Remote fetch failed: ${(err as Error).message}. Attempting local fallback...`);
-
-      // Fallback paths for local m3u/index.m3u8
-      const potentialPaths = [
-        path.resolve(process.cwd(), '..', 'm3u', 'index.m3u8'),
-        path.resolve(process.cwd(), 'm3u', 'index.m3u8'),
-        path.resolve(__dirname, '../../../m3u/index.m3u8')
-      ];
-
-      for (const localPath of potentialPaths) {
-        if (fs.existsSync(localPath)) {
-          console.log(`[ChannelService] Loaded local fallback playlist from ${localPath}`);
-          return fs.readFileSync(localPath, 'utf-8');
-        }
-      }
-
-      throw new Error(`Failed to load M3U playlist from remote URL and no local fallback found: ${(err as Error).message}`);
+      throw new Error(`Failed to load M3U playlist: ${(err as Error).message}`);
     }
   }
 

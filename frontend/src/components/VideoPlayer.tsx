@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import mpegts from 'mpegts.js';
 import Hls from 'hls.js';
 import { Channel } from '../types/channel';
 import { API_ENDPOINTS } from '../config/api';
@@ -32,77 +33,139 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
     setError(null);
 
     const streamUrl = `${API_ENDPOINTS.STREAM(channel.id)}?token=${encodeURIComponent(token)}`;
-    let hls: Hls | null = null;
+    let mpegtsPlayer: any = null;
+    let hlsPlayer: Hls | null = null;
 
-    if (Hls.isSupported()) {
-      hls = new Hls({
+    const startPlayback = () => {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // If browser restricts unmuted autoplay, mute and resume so video renders immediately
+          video.muted = true;
+          video.play().catch(() => {});
+        });
+      }
+    };
+
+    if (mpegts.isSupported()) {
+      try {
+        mpegtsPlayer = mpegts.createPlayer(
+          {
+            type: 'm2ts',
+            isLive: true,
+            url: streamUrl,
+            cors: true
+          },
+          {
+            enableWorker: false,
+            lazyLoad: false,
+            liveBufferLatencyChasing: true,
+            liveBufferLatencyMaxLatency: 3.0,
+            liveBufferLatencyMinRemain: 0.5,
+            enableStashBuffer: false,
+            autoCleanupSourceBuffer: true
+          }
+        );
+
+        mpegtsPlayer.attachMediaElement(video);
+        mpegtsPlayer.load();
+
+        mpegtsPlayer.on(mpegts.Events.ERROR, (errType: any, errDetail: any) => {
+          console.warn('[mpegts] Stream error:', errType, errDetail);
+          if (errType === mpegts.ErrorTypes.NETWORK_ERROR) {
+            setError('Stream network error. Reconnecting...');
+          }
+        });
+
+        startPlayback();
+      } catch (err) {
+        console.error('[mpegts] Failed to initialize player:', err);
+        setError('Failed to initialize stream player.');
+        setIsLoading(false);
+      }
+    } else if (Hls.isSupported()) {
+      hlsPlayer = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
         backBufferLength: 30
       });
 
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
+      hlsPlayer.loadSource(streamUrl);
+      hlsPlayer.attachMedia(video);
 
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
         setIsLoading(false);
-        video.play().catch(() => {
-          // Autoplay was prevented by browser policy (user interaction needed)
-        });
+        startPlayback();
       });
 
-      hls.on(Hls.Events.ERROR, (_event, data) => {
+      hlsPlayer.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              console.warn('[HLS] Network error, attempting recovery...');
-              hls?.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              console.warn('[HLS] Media error, attempting recovery...');
-              hls?.recoverMediaError();
-              break;
-            default:
-              console.error('[HLS] Unrecoverable error:', data);
-              setError('Failed to play stream. Upstream broadcast may be offline.');
-              setIsLoading(false);
-              hls?.destroy();
-              break;
-          }
+          setError('Failed to play stream. Upstream broadcast may be offline.');
+          setIsLoading(false);
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS support (Safari / iOS)
+      // Native Apple HLS (Safari iOS/macOS)
       video.src = streamUrl;
       video.addEventListener('loadedmetadata', () => {
         setIsLoading(false);
-        video.play().catch(() => {});
+        startPlayback();
       });
     } else {
-      // Fallback direct stream source
+      // Direct video stream
       video.src = streamUrl;
       video.load();
+      startPlayback();
     }
 
-    const handleWaiting = () => setIsLoading(true);
-    const handlePlaying = () => setIsLoading(false);
+    const handlePlaying = () => {
+      setIsLoading(false);
+      setError(null);
+    };
+
+    const handleCanPlay = () => {
+      setIsLoading(false);
+    };
+
+    const handleWaiting = () => {
+      setIsLoading(true);
+    };
+
     const handleError = () => {
       setIsLoading(false);
       setError('Unable to load channel stream.');
     };
 
-    video.addEventListener('waiting', handleWaiting);
     video.addEventListener('playing', handlePlaying);
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('waiting', handleWaiting);
     video.addEventListener('error', handleError);
 
     return () => {
-      video.removeEventListener('waiting', handleWaiting);
       video.removeEventListener('playing', handlePlaying);
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('waiting', handleWaiting);
       video.removeEventListener('error', handleError);
 
-      if (hls) {
-        hls.destroy();
+      if (mpegtsPlayer) {
+        try {
+          mpegtsPlayer.pause();
+          mpegtsPlayer.unload();
+          mpegtsPlayer.detachMediaElement();
+          mpegtsPlayer.destroy();
+        } catch (e) {
+          console.error('[mpegts] Cleanup error:', e);
+        }
       }
+
+      if (hlsPlayer) {
+        try {
+          hlsPlayer.destroy();
+        } catch (e) {
+          console.error('[HLS] Cleanup error:', e);
+        }
+      }
+
       video.pause();
       video.removeAttribute('src');
       video.load();
