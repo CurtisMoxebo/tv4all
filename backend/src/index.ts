@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import channelRoutes from './routes/channelRoutes';
 
 dotenv.config();
 
@@ -29,13 +30,18 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
+// Channel endpoints
+app.use('/api/channels', channelRoutes);
+app.use('/channels', channelRoutes);
+
 // Root route
 app.get('/', (_req: Request, res: Response) => {
   res.json({
     name: 'tv4all IPTV relay backend',
     version: '1.0.0',
     endpoints: {
-      health: '/health'
+      health: '/health',
+      channels: '/api/channels'
     }
   });
 });
