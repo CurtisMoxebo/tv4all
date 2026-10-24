@@ -1,15 +1,5 @@
 {
-  "app": {
-    "title": "tv4all Streaming",
-    "subtitle": "Plateforme de relais et diffusion IPTV source unique",
-    "tagline": "Regardez des flux IPTV partagés entre plusieurs spectateurs"
-  },
   "nav": {
-    "channels": "Chaînes",
-    "manageChannels": "Gérer les chaînes",
-    "broadcasts": "Diffusions",
-    "logs": "Journaux",
-    "login": "Connexion",
     "logout": "Déconnexion"
   },
   "admin": {
@@ -17,49 +7,28 @@
     "manageSubtitle": "Ajouter et supprimer des chaînes du fichier playlist M3U",
     "addChannel": "Ajouter une chaîne",
     "deleteChannel": "Supprimer la chaîne",
-    "confirmDelete": "Voulez-vous vraiment supprimer cette chaîne ?",
-    "channelDeleted": "Chaîne supprimée avec succès",
-    "channelAdded": "Chaîne ajoutée avec succès",
     "backToHome": "Retour au lecteur",
     "accessDenied": "Accès administrateur requis",
     "accessDeniedDesc": "Vous devez être connecté en tant qu'administrateur pour gérer les chaînes.",
     "addModeForm": "Champs du formulaire",
     "addModeM3U": "Lignes M3U brutes (2 lignes)",
     "m3uLine1": "Ligne 1 : Directive #EXTINF",
-    "m3uLine2": "Ligne 2 : URL du flux",
-    "m3uSubtitle": "Collez les 2 lignes directement depuis un fichier M3U pour ajouter la chaîne"
+    "m3uLine2": "Ligne 2 : URL du flux"
   },
   "auth": {
-    "title": "Authentification",
     "username": "Nom d'utilisateur",
     "password": "Mot de passe",
     "loginButton": "Se connecter",
     "signingIn": "Connexion en cours...",
-    "invalidCredentials": "Nom d'utilisateur ou mot de passe invalide",
-    "loggedInAs": "Connecté en tant que {{username}}",
-    "tokenValid12h": "Jeton valide pendant 12 heures"
+    "invalidCredentials": "Nom d'utilisateur ou mot de passe invalide"
   },
   "channels": {
     "title": "Chaînes disponibles",
     "searchPlaceholder": "Rechercher des chaînes par nom ou identifiant...",
     "allGroups": "Toutes les catégories",
-    "noChannels": "Aucune chaîne trouvée",
-    "viewCount": "{{count}} spectateur",
-    "viewCount_plural": "{{count}} spectateurs",
-    "watchLive": "Regarder en direct",
-    "live": "EN DIRECT"
-  },
-  "player": {
-    "connecting": "Connexion au flux...",
-    "broadcasting": "Diffusion en direct active",
-    "error": "Échec du chargement du flux",
-    "offline": "Chaîne hors ligne ou inaccessible"
+    "noChannels": "Aucune chaîne trouvée"
   },
   "common": {
-    "language": "Langue",
-    "english": "Anglais",
-    "french": "Français",
-    "spanish": "Espagnol",
     "loading": "Chargement...",
     "refresh": "Actualiser"
   }

@@ -1,15 +1,5 @@
 {
-  "app": {
-    "title": "tv4all Streaming",
-    "subtitle": "Single-source IPTV relay and broadcasting platform",
-    "tagline": "Watch IPTV streams shared across multiple viewers"
-  },
   "nav": {
-    "channels": "Channels",
-    "manageChannels": "Manage Channels",
-    "broadcasts": "Broadcasts",
-    "logs": "Logs",
-    "login": "Login",
     "logout": "Logout"
   },
   "admin": {
@@ -17,49 +7,28 @@
     "manageSubtitle": "Add and remove channels from the M3U playlist file",
     "addChannel": "Add New Channel",
     "deleteChannel": "Delete Channel",
-    "confirmDelete": "Are you sure you want to delete this channel?",
-    "channelDeleted": "Channel deleted successfully",
-    "channelAdded": "Channel added successfully",
     "backToHome": "Back to Player",
     "accessDenied": "Admin Access Required",
     "accessDeniedDesc": "You must be signed in as an administrator to manage channels.",
     "addModeForm": "Form Fields",
     "addModeM3U": "Raw M3U (2 Lines)",
     "m3uLine1": "Line 1: #EXTINF Directive",
-    "m3uLine2": "Line 2: Stream URL",
-    "m3uSubtitle": "Paste the 2 lines directly from an M3U file to add the channel"
+    "m3uLine2": "Line 2: Stream URL"
   },
   "auth": {
-    "title": "Authentication",
     "username": "Username",
     "password": "Password",
     "loginButton": "Sign In",
     "signingIn": "Signing in...",
-    "invalidCredentials": "Invalid username or password",
-    "loggedInAs": "Logged in as {{username}}",
-    "tokenValid12h": "Token valid for 12 hours"
+    "invalidCredentials": "Invalid username or password"
   },
   "channels": {
     "title": "Available Channels",
     "searchPlaceholder": "Search channels by name or ID...",
     "allGroups": "All Categories",
-    "noChannels": "No channels found",
-    "viewCount": "{{count}} viewer",
-    "viewCount_plural": "{{count}} viewers",
-    "watchLive": "Watch Live",
-    "live": "LIVE"
-  },
-  "player": {
-    "connecting": "Connecting to stream...",
-    "broadcasting": "Live broadcast active",
-    "error": "Failed to load stream",
-    "offline": "Channel offline or unreachable"
+    "noChannels": "No channels found"
   },
   "common": {
-    "language": "Language",
-    "english": "English",
-    "french": "French",
-    "spanish": "Spanish",
     "loading": "Loading...",
     "refresh": "Refresh"
   }

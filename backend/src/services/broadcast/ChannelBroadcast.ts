@@ -483,7 +483,7 @@ export class ChannelBroadcast extends EventEmitter {
     }
 
     // Close any remaining connected clients
-    for (const [clientId, client] of this.clients.entries()) {
+    for (const client of this.clients.values()) {
       try {
         if (!client.res.writableEnded) {
           client.res.end();
