@@ -18,15 +18,15 @@ router.post('/login', (req: Request, res: Response) => {
     });
   }
 
-  const isValid = authService.validateCredentials(username, password);
-  if (!isValid) {
+  const authenticatedUser = authService.authenticate(username, password);
+  if (!authenticatedUser) {
     return res.status(401).json({
       error: 'Unauthorized',
       message: 'Invalid username or password'
     });
   }
 
-  const token = authService.generateToken(username);
+  const token = authService.generateToken(authenticatedUser.username, authenticatedUser.role);
 
   return res.json({
     message: 'Authentication successful',
@@ -34,7 +34,8 @@ router.post('/login', (req: Request, res: Response) => {
     tokenType: 'Bearer',
     expiresIn: '12h',
     user: {
-      username
+      username: authenticatedUser.username,
+      role: authenticatedUser.role
     }
   });
 });
@@ -52,15 +53,15 @@ router.post('/', (req: Request, res: Response) => {
     });
   }
 
-  const isValid = authService.validateCredentials(username, password);
-  if (!isValid) {
+  const authenticatedUser = authService.authenticate(username, password);
+  if (!authenticatedUser) {
     return res.status(401).json({
       error: 'Unauthorized',
       message: 'Invalid username or password'
     });
   }
 
-  const token = authService.generateToken(username);
+  const token = authService.generateToken(authenticatedUser.username, authenticatedUser.role);
 
   return res.json({
     message: 'Authentication successful',
@@ -68,7 +69,8 @@ router.post('/', (req: Request, res: Response) => {
     tokenType: 'Bearer',
     expiresIn: '12h',
     user: {
-      username
+      username: authenticatedUser.username,
+      role: authenticatedUser.role
     }
   });
 });
@@ -85,4 +87,3 @@ router.get('/me', requireAuth, (req: Request, res: Response) => {
 });
 
 export default router;
-
