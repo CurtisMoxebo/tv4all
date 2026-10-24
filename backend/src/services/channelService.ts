@@ -1,72 +1,74 @@
+import fs from 'fs';
+import path from 'path';
 import { Channel, ChannelSummary, GroupInfo } from '../types/channel';
 import { parseM3U } from '../utils/m3uParser';
 
-const DEFAULT_M3U_URL = 'https://raw.githubusercontent.com/CurtisMoxebo/tv4all/refs/heads/main/m3u/index.m3u8';
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-
 class ChannelService {
   private channels: Channel[] = [];
-  private lastFetched: number = 0;
-  private fetchPromise: Promise<Channel[]> | null = null;
-
-  public get m3uUrl(): string {
-    return process.env.CHANNELS_M3U_URL || process.env.M3U_URL || DEFAULT_M3U_URL;
-  }
+  private lastMtime: number = 0;
 
   /**
-   * Fetches M3U content directly from the remote URL specified in .env.
+   * Resolves the path to the backend/index.m3u8 file.
    */
-  private async fetchM3UContent(): Promise<string> {
-    const url = this.m3uUrl;
-    console.log(`[ChannelService] Fetching playlist from .env URL: ${url}...`);
+  public getPlaylistPath(): string {
+    const candidates = [
+      path.resolve(process.cwd(), 'index.m3u8'),
+      path.resolve(process.cwd(), 'backend', 'index.m3u8'),
+      path.resolve(__dirname, '../../index.m3u8'),
+      path.resolve(__dirname, '../../../backend/index.m3u8')
+    ];
 
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'tv4all-backend/1.0.0 (Mozilla/5.0)'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) {
+        return candidate;
       }
-
-      const text = await response.text();
-      console.log(`[ChannelService] Successfully fetched M3U from .env URL (${text.length} bytes)`);
-      return text;
-    } catch (err) {
-      console.error(`[ChannelService] Failed to load M3U from .env URL ${url}:`, err);
-      throw new Error(`Failed to load M3U playlist from .env URL: ${(err as Error).message}`);
     }
+
+    return path.resolve(process.cwd(), 'backend', 'index.m3u8');
   }
 
   /**
-   * Reloads and parses the channels playlist from the .env URL.
+   * Reads M3U content directly from backend/index.m3u8.
+   */
+  private readM3UContent(): string {
+    const playlistPath = this.getPlaylistPath();
+    if (!fs.existsSync(playlistPath)) {
+      throw new Error(`Playlist file not found at ${playlistPath}`);
+    }
+    return fs.readFileSync(playlistPath, 'utf-8');
+  }
+
+  /**
+   * Reloads and parses the channels playlist from backend/index.m3u8.
    */
   public async loadChannels(force: boolean = false): Promise<Channel[]> {
-    const isCacheExpired = Date.now() - this.lastFetched > CACHE_TTL_MS;
+    const playlistPath = this.getPlaylistPath();
 
-    if (!force && this.channels.length > 0 && !isCacheExpired) {
-      return this.channels;
+    if (!fs.existsSync(playlistPath)) {
+      console.warn(`[ChannelService] Playlist file not found at ${playlistPath}`);
+      return [];
     }
 
-    if (this.fetchPromise) {
-      return this.fetchPromise;
-    }
+    try {
+      const stats = fs.statSync(playlistPath);
+      const isModified = stats.mtimeMs > this.lastMtime;
 
-    this.fetchPromise = (async () => {
-      try {
-        const content = await this.fetchM3UContent();
-        this.channels = parseM3U(content);
-        this.lastFetched = Date.now();
-        console.log(`[ChannelService] Loaded ${this.channels.length} channels from .env URL`);
+      if (!force && this.channels.length > 0 && !isModified) {
         return this.channels;
-      } finally {
-        this.fetchPromise = null;
       }
-    })();
 
-    return this.fetchPromise;
+      const content = this.readM3UContent();
+      this.channels = parseM3U(content);
+      this.lastMtime = stats.mtimeMs;
+      console.log(`[ChannelService] Loaded ${this.channels.length} channels from ${playlistPath}`);
+      return this.channels;
+    } catch (err) {
+      console.error(`[ChannelService] Failed to read or parse ${playlistPath}:`, err);
+      if (this.channels.length > 0) {
+        return this.channels;
+      }
+      throw err;
+    }
   }
 
   /**
@@ -138,4 +140,3 @@ class ChannelService {
 }
 
 export const channelService = new ChannelService();
-
