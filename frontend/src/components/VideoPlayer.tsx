@@ -25,11 +25,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
       video.pause();
       video.removeAttribute('src');
       video.load();
+      video.muted = false;
       setIsLoading(false);
       setError(null);
       return;
     }
 
+    // Always keep video unmuted with full volume
+    video.muted = false;
+    video.defaultMuted = false;
+    video.volume = 1.0;
     setIsLoading(true);
     setError(null);
 
@@ -38,21 +43,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
     let hlsPlayer: Hls | null = null;
 
     const startPlayback = () => {
+      video.muted = false;
+      video.defaultMuted = false;
+      video.volume = 1.0;
       try {
         const p = mpegtsPlayer ? mpegtsPlayer.play() : video.play();
         if (p !== undefined && typeof p?.catch === 'function') {
-          p.catch(() => {
-            // Autoplay unmuted restriction: start muted so video frame renders immediately
-            video.muted = true;
-            if (mpegtsPlayer) {
-              mpegtsPlayer.play();
-            } else {
-              video.play().catch(() => {});
-            }
+          p.catch((err: any) => {
+            console.warn('[VideoPlayer] Play call caught / deferred:', err);
           });
         }
-      } catch {
-        // ignore play invocation error if deferred
+      } catch (e) {
+        console.warn('Playback play() call deferred:', e);
       }
     };
 
@@ -137,6 +139,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
         clearTimeout(waitingTimer);
         waitingTimer = null;
       }
+      video.muted = false;
       setIsLoading(false);
       setError(null);
     };
@@ -148,6 +151,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
       }
       setIsLoading(false);
       setError(null);
+      if (video.paused) {
+        video.muted = false;
+        video.volume = 1.0;
+        const p = mpegtsPlayer ? mpegtsPlayer.play() : video.play();
+        if (p !== undefined && typeof p?.catch === 'function') {
+          p.catch(() => {});
+        }
+      }
     };
 
     const handleLoadedData = () => {
@@ -155,6 +166,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
         clearTimeout(waitingTimer);
         waitingTimer = null;
       }
+      video.muted = false;
       setIsLoading(false);
       setError(null);
     };
@@ -185,6 +197,22 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
       setError('Unable to load channel stream.');
     };
 
+    // Any user click on the page ensures unmuted playback
+    const handleUserGesture = () => {
+      const v = videoRef.current;
+      if (v) {
+        v.muted = false;
+        v.volume = 1.0;
+        if (v.paused) {
+          v.play().catch(() => {});
+        }
+      }
+    };
+
+    window.addEventListener('click', handleUserGesture);
+    window.addEventListener('pointerdown', handleUserGesture);
+    window.addEventListener('keydown', handleUserGesture);
+
     video.addEventListener('playing', handlePlaying);
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('loadeddata', handleLoadedData);
@@ -192,6 +220,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
     video.addEventListener('error', handleVideoError);
 
     return () => {
+      window.removeEventListener('click', handleUserGesture);
+      window.removeEventListener('pointerdown', handleUserGesture);
+      window.removeEventListener('keydown', handleUserGesture);
+
       if (waitingTimer) {
         clearTimeout(waitingTimer);
         waitingTimer = null;
@@ -229,6 +261,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
         ref={videoRef}
         controls={!!channel}
         playsInline
+        muted={false}
         className="w-full h-full object-contain bg-black"
       />
 
