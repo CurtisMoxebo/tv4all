@@ -22,7 +22,12 @@
     "channelAdded": "Canal agregado con éxito",
     "backToHome": "Volver al reproductor",
     "accessDenied": "Acceso de administrador requerido",
-    "accessDeniedDesc": "Debes iniciar sesión como administrador para gestionar canales."
+    "accessDeniedDesc": "Debes iniciar sesión como administrador para gestionar canales.",
+    "addModeForm": "Campos del formulario",
+    "addModeM3U": "Líneas M3U sin procesar (2 líneas)",
+    "m3uLine1": "Línea 1: Directiva #EXTINF",
+    "m3uLine2": "Línea 2: URL de transmisión",
+    "m3uSubtitle": "Pega las 2 líneas directamente desde un archivo M3U para agregar el canal"
   },
   "auth": {
     "title": "Autenticación",

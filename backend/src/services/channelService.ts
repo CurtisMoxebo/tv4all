@@ -28,6 +28,72 @@ function escapeM3UAttribute(val: string): string {
 }
 
 /**
+ * Validates the 2 M3U lines (Line 1: #EXTINF directive, Line 2: Stream URL).
+ */
+export function validateM3ULines(rawExtinf: any, rawUrl: any): {
+  isValid: boolean;
+  errors: string[];
+  sanitized?: {
+    extinf: string;
+    url: string;
+    channel: Channel;
+  };
+} {
+  const errors: string[] = [];
+
+  if (!rawExtinf || typeof rawExtinf !== 'string' || !rawExtinf.trim()) {
+    errors.push("Line 1 (#EXTINF directive) is required and must be a non-empty string");
+  }
+
+  if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
+    errors.push("Line 2 (Stream URL) is required and must be a non-empty string");
+  }
+
+  if (errors.length > 0) {
+    return { isValid: false, errors };
+  }
+
+  const extinf = rawExtinf.trim();
+  const url = rawUrl.trim();
+
+  // Validate Line 1 starts with #EXTINF:
+  if (!extinf.toUpperCase().startsWith('#EXTINF:')) {
+    errors.push("Line 1 must start with '#EXTINF:' (e.g. #EXTINF:-1 tvg-name=\"Channel\",Channel Name)");
+  }
+
+  if (extinf.includes('\n') || extinf.includes('\r')) {
+    errors.push("Line 1 cannot contain newline characters");
+  }
+
+  // Validate Line 2 does not contain newline characters and is a valid URL
+  if (url.includes('\n') || url.includes('\r')) {
+    errors.push("Line 2 cannot contain newline characters");
+  } else if (!isValidUrl(url)) {
+    errors.push(`Line 2 must be a valid HTTP or HTTPS URL (received '${url}')`);
+  }
+
+  // Verify that the 2 lines can be parsed as a valid channel
+  const parsed = parseM3U(`${extinf}\n${url}`);
+  if (parsed.length === 0) {
+    errors.push("Line 1 does not contain valid channel title or metadata");
+  }
+
+  if (errors.length > 0) {
+    return { isValid: false, errors };
+  }
+
+  return {
+    isValid: true,
+    errors: [],
+    sanitized: {
+      extinf,
+      url,
+      channel: parsed[0]
+    }
+  };
+}
+
+/**
  * Validates each field of the channel payload.
  */
 export function validateChannelPayload(payload: any): {
@@ -286,9 +352,69 @@ class ChannelService {
   }
 
   /**
-   * Validates payload fields and appends the new channel to backend/index.m3u8.
+   * Appends a channel directly from two raw M3U lines (Line 1: #EXTINF, Line 2: Stream URL).
+   */
+  public async addChannelFromM3ULines(rawExtinf: string, rawUrl: string): Promise<Channel> {
+    const validation = validateM3ULines(rawExtinf, rawUrl);
+    if (!validation.isValid || !validation.sanitized) {
+      throw new ValidationError('M3U lines validation failed', validation.errors);
+    }
+
+    const { extinf, url, channel } = validation.sanitized;
+    const playlistPath = this.getPlaylistPath();
+
+    if (!fs.existsSync(playlistPath)) {
+      fs.writeFileSync(playlistPath, '#EXTM3U\n', 'utf-8');
+    }
+
+    const existingContent = fs.readFileSync(playlistPath, 'utf-8');
+    const separator = existingContent.endsWith('\n') ? '' : '\n';
+    const newEntry = `${separator}${extinf}\n${url}\n`;
+
+    fs.appendFileSync(playlistPath, newEntry, 'utf-8');
+    console.log(`[ChannelService] Appended 2-line M3U channel '${channel.name}' to ${playlistPath}`);
+
+    // Immediately reload channels cache
+    await this.loadChannels(true);
+
+    const reloaded = await this.loadChannels();
+    const found = reloaded.find(c => c.url === channel.url) || reloaded[reloaded.length - 1] || channel;
+
+    return found;
+  }
+
+  /**
+   * Validates payload fields and appends the new channel to the playlist file.
+   * Supports both structured JSON fields and raw 2-line M3U input.
    */
   public async addChannel(payload: any): Promise<Channel> {
+    // 1. Check if raw 2-line input was passed
+    if (typeof payload === 'string') {
+      const lines = payload.trim().split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length >= 2) {
+        return this.addChannelFromM3ULines(lines[0], lines[1]);
+      }
+    }
+
+    if (payload && typeof payload === 'object') {
+      const rawText = payload.raw ?? payload.rawM3U ?? payload.m3u ?? payload.content ?? payload.lines;
+      if (typeof rawText === 'string') {
+        const lines = rawText.trim().split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+        if (lines.length >= 2) {
+          return this.addChannelFromM3ULines(lines[0], lines[1]);
+        }
+      }
+
+      if (Array.isArray(rawText) && rawText.length >= 2) {
+        return this.addChannelFromM3ULines(rawText[0], rawText[1]);
+      }
+
+      if (typeof payload.extinf === 'string' && typeof payload.url === 'string' && payload.extinf.trim().toUpperCase().startsWith('#EXTINF')) {
+        return this.addChannelFromM3ULines(payload.extinf, payload.url);
+      }
+    }
+
+    // 2. Standard field validation
     const validation = validateChannelPayload(payload);
     if (!validation.isValid || !validation.sanitized) {
       throw new ValidationError('Channel payload validation failed', validation.errors);

@@ -22,7 +22,12 @@
     "channelAdded": "Channel added successfully",
     "backToHome": "Back to Player",
     "accessDenied": "Admin Access Required",
-    "accessDeniedDesc": "You must be signed in as an administrator to manage channels."
+    "accessDeniedDesc": "You must be signed in as an administrator to manage channels.",
+    "addModeForm": "Form Fields",
+    "addModeM3U": "Raw M3U (2 Lines)",
+    "m3uLine1": "Line 1: #EXTINF Directive",
+    "m3uLine2": "Line 2: Stream URL",
+    "m3uSubtitle": "Paste the 2 lines directly from an M3U file to add the channel"
   },
   "auth": {
     "title": "Authentication",

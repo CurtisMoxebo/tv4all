@@ -18,6 +18,7 @@ const PORT = process.env.PORT || 5000;
 // Middlewares
 app.use(cors());
 app.use(express.json());
+app.use(express.text({ type: ['text/*', 'application/x-mpegurl', 'audio/x-mpegurl'] }));
 app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 

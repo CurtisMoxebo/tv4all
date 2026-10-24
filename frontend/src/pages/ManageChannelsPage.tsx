@@ -44,12 +44,20 @@ export const ManageChannelsPage: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState('all');
 
   // Add channel state
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const [addMode, setAddMode] = useState<'form' | 'raw'>('form');
+
+  // 1. Structured form state
   const [formData, setFormData] = useState<AddChannelForm>(INITIAL_FORM);
+
+  // 2. Raw 2-line M3U state
+  const [rawExtinf, setRawExtinf] = useState('');
+  const [rawUrl, setRawUrl] = useState('');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [addErrorsList, setAddErrorsList] = useState<string[]>([]);
   const [addSuccess, setAddSuccess] = useState<string | null>(null);
-  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
 
   // Delete channel state
   const [channelToDelete, setChannelToDelete] = useState<Channel | null>(null);
@@ -98,8 +106,60 @@ export const ManageChannelsPage: React.FC = () => {
     }
   }, [isAuthenticated, isAdmin, token]);
 
-  // Handle Add Channel submission
-  const handleAddChannel = async (e: React.FormEvent) => {
+  // Live parser preview for raw 2-line M3U input
+  const parsedRawPreview = useMemo(() => {
+    if (!rawExtinf.trim()) return null;
+    try {
+      const extinf = rawExtinf.trim();
+      const commaIndex = extinf.indexOf(',');
+      const rawTitle = commaIndex !== -1 ? extinf.slice(commaIndex + 1).trim() : '';
+
+      const tvgNameMatch = extinf.match(/tvg-name\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s,]+))/i);
+      const tvgName = tvgNameMatch ? (tvgNameMatch[1] ?? tvgNameMatch[2] ?? tvgNameMatch[3]) : null;
+
+      const tvgIdMatch = extinf.match(/tvg-id\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s,]+))/i);
+      const tvgId = tvgIdMatch ? (tvgIdMatch[1] ?? tvgIdMatch[2] ?? tvgIdMatch[3]) : null;
+
+      const tvgLogoMatch = extinf.match(/tvg-logo\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s,]+))/i);
+      const tvgLogo = tvgLogoMatch ? (tvgLogoMatch[1] ?? tvgLogoMatch[2] ?? tvgLogoMatch[3]) : null;
+
+      const groupMatch = extinf.match(/group-title\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s,]+))/i);
+      const groupTitle = groupMatch ? (groupMatch[1] ?? groupMatch[2] ?? groupMatch[3]) : null;
+
+      const name = tvgName || rawTitle || 'Channel Title';
+      const logo = tvgLogo || '';
+      const group = groupTitle || 'General';
+      const id = tvgId || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+      return {
+        name,
+        logo,
+        group,
+        id,
+        url: rawUrl.trim()
+      };
+    } catch {
+      return null;
+    }
+  }, [rawExtinf, rawUrl]);
+
+  // Quick auto-split when pasting both lines at once into Line 1
+  const handleExtinfPaste = (e: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const text = e.clipboardData.getData('text');
+    if (text.includes('\n')) {
+      e.preventDefault();
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length >= 2) {
+        setRawExtinf(lines[0]);
+        setRawUrl(lines[1]);
+      } else if (lines.length === 1) {
+        setRawExtinf(lines[0]);
+      }
+    }
+  };
+
+  // Handle Add Channel submission (Structured Form)
+  const handleAddStructuredChannel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
 
@@ -143,10 +203,54 @@ export const ManageChannelsPage: React.FC = () => {
       setFormData(INITIAL_FORM);
       setIsAddFormOpen(false);
 
-      // Refresh channel list
       await loadChannels();
+      setTimeout(() => setAddSuccess(null), 5000);
+    } catch (err) {
+      setAddError((err as Error).message || 'Network error while adding channel');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-      // Clear success notification after 5 seconds
+  // Handle Add Channel submission (Raw 2-Line M3U)
+  const handleAddRawM3UChannel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+
+    setIsSubmitting(true);
+    setAddError(null);
+    setAddErrorsList([]);
+    setAddSuccess(null);
+
+    try {
+      const res = await fetch(API_ENDPOINTS.CHANNEL_RAW, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          extinf: rawExtinf.trim(),
+          url: rawUrl.trim()
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setAddError(data.message || 'Failed to add channel from M3U lines');
+        if (Array.isArray(data.errors) && data.errors.length > 0) {
+          setAddErrorsList(data.errors);
+        }
+        return;
+      }
+
+      setAddSuccess(`Channel "${data.channel?.name || 'New Channel'}" added successfully from M3U lines!`);
+      setRawExtinf('');
+      setRawUrl('');
+      setIsAddFormOpen(false);
+
+      await loadChannels();
       setTimeout(() => setAddSuccess(null), 5000);
     } catch (err) {
       setAddError((err as Error).message || 'Network error while adding channel');
@@ -318,7 +422,11 @@ export const ManageChannelsPage: React.FC = () => {
           <div className="flex items-center space-x-3">
             <button
               type="button"
-              onClick={() => setIsAddFormOpen(prev => !prev)}
+              onClick={() => {
+                setIsAddFormOpen(prev => !prev);
+                setAddError(null);
+                setAddErrorsList([]);
+              }}
               className="px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center space-x-2 cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 active:scale-95"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -365,19 +473,65 @@ export const ManageChannelsPage: React.FC = () => {
         {/* Add Channel Collapsible Form */}
         {isAddFormOpen && (
           <div className="bg-[#0d1527] border border-indigo-900/50 rounded-2xl p-6 shadow-2xl shadow-indigo-950/30 space-y-5 animate-in fade-in slide-in-from-top-4 duration-200">
-            <div className="flex items-center justify-between border-b border-[#1e2c47] pb-3">
+            {/* Header with Mode Switcher Tabs */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1e2c47] pb-4">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold">
                   +
                 </div>
-                <h2 className="text-base font-bold text-white">
-                  {t('admin.addChannel', 'Add New Channel')}
-                </h2>
+                <div>
+                  <h2 className="text-base font-bold text-white">
+                    {t('admin.addChannel', 'Add New Channel')}
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    {addMode === 'form' ? 'Configure channel fields using the form' : 'Paste the 2 M3U lines (#EXTINF + stream URL)'}
+                  </p>
+                </div>
               </div>
-              <span className="text-xs text-slate-400">Updates index.m3u8</span>
+
+              {/* Mode Toggle Tabs */}
+              <div className="flex items-center p-1 rounded-xl bg-[#151f32] border border-[#263756] self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddMode('form');
+                    setAddError(null);
+                    setAddErrorsList([]);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                    addMode === 'form'
+                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/40'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>{t('admin.addModeForm', 'Form Fields')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddMode('raw');
+                    setAddError(null);
+                    setAddErrorsList([]);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                    addMode === 'raw'
+                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/40'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  </svg>
+                  <span>{t('admin.addModeM3U', 'Raw M3U (2 Lines)')}</span>
+                </button>
+              </div>
             </div>
 
-            {/* Validation errors */}
+            {/* Validation errors banner */}
             {addError && (
               <div className="p-3.5 rounded-xl bg-rose-950/50 border border-rose-800/60 text-rose-300 text-xs space-y-1">
                 <div className="font-semibold text-rose-200">{addError}</div>
@@ -391,169 +545,291 @@ export const ManageChannelsPage: React.FC = () => {
               </div>
             )}
 
-            <form onSubmit={handleAddChannel} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Channel Name */}
+            {/* MODE 1: Standard Structured Form */}
+            {addMode === 'form' && (
+              <form onSubmit={handleAddStructuredChannel} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Channel Name */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                      Channel Name <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. TF1, BFM TV, France 24"
+                      value={formData.name}
+                      onChange={e => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
+                    />
+                  </div>
+
+                  {/* Stream URL */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                      Stream URL (HLS / m3u8) <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      placeholder="https://example.com/live/stream.m3u8"
+                      value={formData.url}
+                      onChange={e => setFormData({ ...formData, url: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
+                    />
+                  </div>
+
+                  {/* Group / Category */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                      Category / Group
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. News, Sport, General, Kids"
+                      value={formData.group}
+                      onChange={e => setFormData({ ...formData, group: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
+                    />
+                    {/* Category quick suggestions */}
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {COMMON_GROUPS.map(g => (
+                        <button
+                          type="button"
+                          key={g}
+                          onClick={() => setFormData({ ...formData, group: g })}
+                          className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-colors ${
+                            formData.group.toLowerCase() === g.toLowerCase()
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-[#151f32] text-slate-400 hover:text-white hover:bg-[#1d2b45]'
+                          }`}
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Logo URL */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                      Logo Image URL
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="url"
+                        placeholder="https://example.com/logo.png"
+                        value={formData.logo}
+                        onChange={e => setFormData({ ...formData, logo: e.target.value })}
+                        className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
+                      />
+                      {formData.logo ? (
+                        <div className="w-10 h-10 rounded-lg bg-[#080d1a] border border-[#263756] overflow-hidden flex items-center justify-center shrink-0 p-1">
+                          <img
+                            src={formData.logo}
+                            alt="Preview"
+                            className="w-full h-full object-contain"
+                            onError={e => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Optional Custom Channel ID */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                      <span>Channel ID (tvg-id)</span>
+                      <span className="text-[10px] text-slate-500 font-normal lowercase">auto-derived if empty</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. TF1.fr (optional)"
+                      value={formData.id}
+                      onChange={e => setFormData({ ...formData, id: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
+                    />
+                  </div>
+
+                  {/* Channel Number & Country */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Channel No.
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 1"
+                        value={formData.chno}
+                        onChange={e => setFormData({ ...formData, chno: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Country
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="FR"
+                        value={formData.country}
+                        onChange={e => setFormData({ ...formData, country: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors uppercase"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Form Actions */}
+                <div className="pt-2 flex items-center justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(INITIAL_FORM);
+                      setIsAddFormOpen(false);
+                    }}
+                    className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-[#151f32] text-sm font-semibold transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-md shadow-indigo-600/30 disabled:opacity-50 cursor-pointer flex items-center space-x-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Saving Channel...</span>
+                      </>
+                    ) : (
+                      <span>Add to Playlist</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* MODE 2: Raw 2-Line M3U Input */}
+            {addMode === 'raw' && (
+              <form onSubmit={handleAddRawM3UChannel} className="space-y-4">
+                <div className="p-3 rounded-xl bg-[#121c33] border border-indigo-900/40 text-xs text-indigo-300 flex items-start space-x-2.5">
+                  <svg className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <span className="font-semibold text-white">2-Line M3U Entry:</span> Pasting both lines at once into Line 1 will automatically populate both fields!
+                  </div>
+                </div>
+
+                {/* Line 1: #EXTINF */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Channel Name <span className="text-rose-400">*</span>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                    <span>{t('admin.m3uLine1', 'Line 1: #EXTINF Directive')} <span className="text-rose-400">*</span></span>
+                    <span className="text-[10px] text-slate-500 lowercase font-mono">starts with #EXTINF:</span>
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. TF1, BFM TV, France 24"
-                    value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
+                    placeholder='#EXTINF:-1 tvg-name="France 2" tvg-logo="https://..." tvg-id="France2.fr" group-title="General",France 2'
+                    value={rawExtinf}
+                    onChange={e => setRawExtinf(e.target.value)}
+                    onPaste={handleExtinfPaste}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white font-mono placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
                   />
                 </div>
 
-                {/* Stream URL */}
+                {/* Line 2: Stream URL */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Stream URL (HLS / m3u8) <span className="text-rose-400">*</span>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                    <span>{t('admin.m3uLine2', 'Line 2: Stream URL')} <span className="text-rose-400">*</span></span>
+                    <span className="text-[10px] text-slate-500 lowercase font-mono">http:// or https://</span>
                   </label>
                   <input
                     type="url"
                     required
-                    placeholder="https://example.com/live/stream.m3u8"
-                    value={formData.url}
-                    onChange={e => setFormData({ ...formData, url: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
+                    placeholder="https://example.com/stream/index.m3u8"
+                    value={rawUrl}
+                    onChange={e => setRawUrl(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white font-mono placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
                   />
                 </div>
 
-                {/* Group / Category */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Category / Group
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. News, Sport, General, Kids"
-                    value={formData.group}
-                    onChange={e => setFormData({ ...formData, group: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
-                  />
-                  {/* Category quick suggestions */}
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {COMMON_GROUPS.map(g => (
-                      <button
-                        type="button"
-                        key={g}
-                        onClick={() => setFormData({ ...formData, group: g })}
-                        className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-colors ${
-                          formData.group.toLowerCase() === g.toLowerCase()
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-[#151f32] text-slate-400 hover:text-white hover:bg-[#1d2b45]'
-                        }`}
-                      >
-                        {g}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {/* Real-time Parsed Metadata Preview */}
+                {parsedRawPreview && (
+                  <div className="p-4 rounded-xl bg-[#10182b] border border-[#1e2c47] space-y-2">
+                    <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>Live Metadata Preview</span>
+                    </div>
 
-                {/* Logo URL */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Logo Image URL
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="url"
-                      placeholder="https://example.com/logo.png"
-                      value={formData.logo}
-                      onChange={e => setFormData({ ...formData, logo: e.target.value })}
-                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
-                    />
-                    {formData.logo ? (
-                      <div className="w-10 h-10 rounded-lg bg-[#080d1a] border border-[#263756] overflow-hidden flex items-center justify-center shrink-0 p-1">
-                        <img
-                          src={formData.logo}
-                          alt="Preview"
-                          className="w-full h-full object-contain"
-                          onError={e => {
-                            (e.currentTarget as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
+                    <div className="flex items-center space-x-3">
+                      {/* Logo */}
+                      <div className="w-10 h-10 rounded-xl bg-[#080d1a] border border-[#263756] overflow-hidden flex items-center justify-center shrink-0 p-1">
+                        {parsedRawPreview.logo ? (
+                          <img
+                            src={parsedRawPreview.logo}
+                            alt="Preview"
+                            className="w-full h-full object-contain"
+                            onError={e => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="text-xs font-bold text-slate-500 uppercase">
+                            {parsedRawPreview.name.slice(0, 2)}
+                          </div>
+                        )}
                       </div>
-                    ) : null}
-                  </div>
-                </div>
 
-                {/* Optional Custom Channel ID */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                    <span>Channel ID (tvg-id)</span>
-                    <span className="text-[10px] text-slate-500 font-normal lowercase">auto-derived if empty</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. TF1.fr (optional)"
-                    value={formData.id}
-                    onChange={e => setFormData({ ...formData, id: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
-                  />
-                </div>
-
-                {/* Channel Number & Country */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                      Channel No.
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 1"
-                      value={formData.chno}
-                      onChange={e => setFormData({ ...formData, chno: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors"
-                    />
+                      {/* Info */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-bold text-white truncate">{parsedRawPreview.name}</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#151f32] text-indigo-300 border border-indigo-900/40 shrink-0">
+                            {parsedRawPreview.group}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-400 font-mono truncate">
+                          ID: <span className="text-slate-300">{parsedRawPreview.id}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                      Country
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="FR"
-                      value={formData.country}
-                      onChange={e => setFormData({ ...formData, country: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#151f32] border border-[#263756] text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-colors uppercase"
-                    />
-                  </div>
-                </div>
-              </div>
+                )}
 
-              {/* Form Actions */}
-              <div className="pt-2 flex items-center justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData(INITIAL_FORM);
-                    setIsAddFormOpen(false);
-                  }}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-[#151f32] text-sm font-semibold transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-md shadow-indigo-600/30 disabled:opacity-50 cursor-pointer flex items-center space-x-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Saving Channel...</span>
-                    </>
-                  ) : (
-                    <span>Add to Playlist</span>
-                  )}
-                </button>
-              </div>
-            </form>
+                {/* Form Actions */}
+                <div className="pt-2 flex items-center justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRawExtinf('');
+                      setRawUrl('');
+                      setIsAddFormOpen(false);
+                    }}
+                    className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-[#151f32] text-sm font-semibold transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !rawExtinf.trim() || !rawUrl.trim()}
+                    className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-md shadow-indigo-600/30 disabled:opacity-50 cursor-pointer flex items-center space-x-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Saving M3U Entry...</span>
+                      </>
+                    ) : (
+                      <span>Append M3U Lines</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         )}
 
@@ -786,4 +1062,3 @@ export const ManageChannelsPage: React.FC = () => {
 };
 
 export default ManageChannelsPage;
-

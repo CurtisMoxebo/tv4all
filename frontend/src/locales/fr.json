@@ -22,7 +22,12 @@
     "channelAdded": "Chaîne ajoutée avec succès",
     "backToHome": "Retour au lecteur",
     "accessDenied": "Accès administrateur requis",
-    "accessDeniedDesc": "Vous devez être connecté en tant qu'administrateur pour gérer les chaînes."
+    "accessDeniedDesc": "Vous devez être connecté en tant qu'administrateur pour gérer les chaînes.",
+    "addModeForm": "Champs du formulaire",
+    "addModeM3U": "Lignes M3U brutes (2 lignes)",
+    "m3uLine1": "Ligne 1 : Directive #EXTINF",
+    "m3uLine2": "Ligne 2 : URL du flux",
+    "m3uSubtitle": "Collez les 2 lignes directement depuis un fichier M3U pour ajouter la chaîne"
   },
   "auth": {
     "title": "Authentification",

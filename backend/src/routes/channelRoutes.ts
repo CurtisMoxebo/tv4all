@@ -73,6 +73,67 @@ router.post('/add', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 /**
+ * POST /api/channels/raw
+ * Adds a channel directly from two raw M3U lines.
+ * Accepts:
+ *  - JSON { raw: "#EXTINF...\nhttp..." }
+ *  - JSON { extinf: "#EXTINF...", url: "http..." }
+ *  - JSON { lines: ["#EXTINF...", "http..."] }
+ *  - Plain text (2 lines)
+ */
+router.post('/raw', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    let extinf: string | undefined;
+    let url: string | undefined;
+
+    if (typeof req.body === 'string') {
+      const lines = req.body.trim().split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      extinf = lines[0];
+      url = lines[1];
+    } else if (req.body && typeof req.body === 'object') {
+      const rawText = req.body.raw ?? req.body.rawM3U ?? req.body.content;
+      if (typeof rawText === 'string') {
+        const lines = rawText.trim().split(/\r?\n/).map((l: string) => l.trim()).filter((l: string) => l.length > 0);
+        extinf = lines[0];
+        url = lines[1];
+      } else if (Array.isArray(req.body.lines) && req.body.lines.length >= 2) {
+        extinf = String(req.body.lines[0]);
+        url = String(req.body.lines[1]);
+      } else if (req.body.extinf && req.body.url) {
+        extinf = String(req.body.extinf);
+        url = String(req.body.url);
+      }
+    }
+
+    if (!extinf || !url) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Two M3U lines are required: Line 1 (#EXTINF:...) and Line 2 (Stream URL)',
+        errors: [
+          'Line 1 must start with #EXTINF: (e.g. #EXTINF:-1 tvg-name="Channel",Channel Name)',
+          'Line 2 must be a valid HTTP or HTTPS stream URL'
+        ]
+      });
+    }
+
+    const channel = await channelService.addChannelFromM3ULines(extinf, url);
+    return res.status(201).json({
+      message: 'Channel added successfully from M3U lines',
+      channel
+    });
+  } catch (error: any) {
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: error.message,
+        errors: error.errors
+      });
+    }
+    next(error);
+  }
+});
+
+/**
  * DELETE /api/channels/:id
  * Removes a channel by ID from the M3U playlist file.
  */
