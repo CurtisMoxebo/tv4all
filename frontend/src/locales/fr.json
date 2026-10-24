@@ -31,5 +31,8 @@
   "common": {
     "loading": "Chargement...",
     "refresh": "Actualiser"
+  },
+  "footer": {
+    "copyright": "Tous droits réservés."
   }
 }

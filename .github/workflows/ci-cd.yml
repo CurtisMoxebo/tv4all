@@ -91,7 +91,7 @@ jobs:
   # 3. Frontend Regression Tests
   # =============================================================
   frontend-tests:
-    name: "Frontend: Regression Tests (38 tests)"
+    name: "Frontend: Regression Tests (39 tests)"
     runs-on: ubuntu-latest
 
     steps:
@@ -116,8 +116,8 @@ jobs:
         run: |
           echo "### 🟢 Frontend Regression Tests" >> $GITHUB_STEP_SUMMARY
           echo "- **Framework**: Vitest + React Testing Library + jsdom" >> $GITHUB_STEP_SUMMARY
-          echo "- **Test Suites**: 10 suites (Components, Pages, Context, i18n)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Total Tests**: 38 automated test cases" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Suites**: 11 suites (Components, Pages, Context, i18n)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total Tests**: 39 automated test cases" >> $GITHUB_STEP_SUMMARY
 
   # =============================================================
   # 4. Frontend Build

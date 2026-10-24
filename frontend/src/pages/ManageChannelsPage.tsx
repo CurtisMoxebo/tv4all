@@ -6,6 +6,7 @@ import { API_ENDPOINTS } from '../config/api';
 import { Channel } from '../types/channel';
 import { Logo } from '../components/Logo';
 import { LanguageSelector } from '../components/LanguageSelector';
+import { Footer } from '../components/Footer';
 
 interface AddChannelForm {
   name: string;
@@ -1049,6 +1050,8 @@ export const ManageChannelsPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <Footer />
     </div>
   );
 };

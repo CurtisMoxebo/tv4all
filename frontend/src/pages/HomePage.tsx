@@ -10,6 +10,7 @@ import { LanguageSelector } from '../components/LanguageSelector';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { ChannelCard } from '../components/ChannelCard';
 import { FilterPopover, SortOrder } from '../components/FilterPopover';
+import { Footer } from '../components/Footer';
 
 export const HomePage: React.FC = () => {
   const { t } = useTranslation();
@@ -488,6 +489,8 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };

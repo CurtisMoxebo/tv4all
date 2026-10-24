@@ -18,7 +18,7 @@
 - [How It Works (Relay Architecture)](#how-it-works-relay-architecture)
 - [Project Structure](#project-structure)
 - [Quick Start](#quick-start)
-- [Default Credentials](#default-credentials)
+- [User Roles & Authentication](#user-roles--authentication)
 - [Configuration & Environment Variables](#configuration--environment-variables)
 - [API Reference](#api-reference)
 - [Frontend Overview](#frontend-overview)
@@ -46,7 +46,7 @@
 - **Multi-Role Authentication**: 12-hour signed JWT sessions with granular role checks (`admin` vs. standard `viewer`).
 - **Tri-lingual Internationalization**: English, French, and Spanish with live runtime switching and `localStorage` persistence.
 - **Search & Categorization**: Real-time query highlighting in channel names, group filter dropdown, and sorting (Default, A-Z, Z-A).
-- **Comprehensive Test Suite**: 105 automated regression tests (67 backend, 38 frontend) validating all core business logic and API contracts.
+- **Comprehensive Test Suite**: 106 automated regression tests (67 backend, 39 frontend) validating all core business logic and API contracts.
 
 ---
 
@@ -148,7 +148,7 @@ tv4all/
 │   │   │   ├── HomePage.tsx      # Main streaming UI & drawer
 │   │   │   ├── LoginPage.tsx     # Authentication form
 │   │   │   └── ManageChannelsPage.tsx # Admin channel CRUD & M3U manager
-│   │   ├── test/                 # 38 Frontend Regression Tests (Vitest)
+│   │   ├── test/                 # 39 Frontend Regression Tests (Vitest)
 │   │   │   ├── components/
 │   │   │   ├── context/
 │   │   │   ├── pages/
@@ -217,16 +217,17 @@ Once running:
 
 ---
 
-## Default Credentials
+## User Roles & Authentication
 
-The platform is pre-configured with two default accounts:
+The platform provides role-based access control with two user tiers configured through environment variables:
 
-| Role | Username | Password | Privileges |
-| --- | --- | --- | --- |
-| **Administrator** | `tv4alladmin` | `123123` | Full access: View all streams, add channels (form & raw M3U), delete channels |
-| **Standard Viewer** | `tv4all` | `123` | Stream playback, search, filter, language switcher (no channel CRUD access) |
+| Role | Privileges | Configured Via (`backend/.env`) |
+| --- | --- | --- |
+| **Administrator** | Full access: View all streams, add channels (form & raw M3U), delete channels | `ADMIN_USERNAME`, `ADMIN_PASSWORD` |
+| **Standard Viewer** | Stream playback, search, filter, and language switcher (read-only) | `AUTH_USERNAME`, `AUTH_PASSWORD` |
 
-*Credentials can be overridden via backend `.env` variables.*
+> [!TIP]
+> Always configure unique, secure usernames and passwords in your `backend/.env` file before running the application. Never commit live credentials or secret keys to version control.
 
 ---
 
@@ -244,15 +245,15 @@ NODE_ENV=development
 CHANNELS_FILE_PATH=../index.m3u8
 
 # Standard viewer credentials
-AUTH_USERNAME=tv4all
-AUTH_PASSWORD=123
+AUTH_USERNAME=your_viewer_username
+AUTH_PASSWORD=your_viewer_password
 
 # Administrator credentials
-ADMIN_USERNAME=tv4alladmin
-ADMIN_PASSWORD=123123
+ADMIN_USERNAME=your_admin_username
+ADMIN_PASSWORD=your_admin_password
 
 # JWT secret key & expiration
-JWT_SECRET=tv4all-super-secret-key-change-in-production
+JWT_SECRET=your_secure_jwt_secret_key
 JWT_EXPIRES_IN=12h
 
 # Optional custom directory for daily logs
@@ -378,8 +379,8 @@ The backend records all HTTP traffic and operational events to rotating daily lo
 
 ```log
 [2026-10-24T02:18:48.538Z] [IP: 127.0.0.1] [INFO] POST /api/auth/login 200 - 1ms
-[2026-10-24T02:19:42.030Z] [IP: 127.0.0.1] [INFO] POST /api/channels 201 - 32ms (User: tv4alladmin)
-[2026-10-24T02:19:42.254Z] [IP: 127.0.0.1] [INFO] DELETE /api/channels/France2.fr 200 - 36ms (User: tv4alladmin)
+[2026-10-24T02:19:42.030Z] [IP: 127.0.0.1] [INFO] POST /api/channels 201 - 32ms (User: admin_user)
+[2026-10-24T02:19:42.254Z] [IP: 127.0.0.1] [INFO] DELETE /api/channels/France2.fr 200 - 36ms (User: admin_user)
 ```
 
 - **IP Normalization**: Resolves `::1` and `::ffff:127.0.0.1` to clean IPv4 addresses. Supports reverse proxies via `X-Forwarded-For`.
@@ -389,7 +390,7 @@ The backend records all HTTP traffic and operational events to rotating daily lo
 
 ## Automated Regression Tests
 
-The project includes **105 automated regression tests** with 100% pass rates:
+The project includes **106 automated regression tests** with 100% pass rates:
 
 ### Run All Tests (Root)
 ```bash
@@ -406,14 +407,14 @@ npm --prefix backend test
 - Safe test execution: channel tests run against temporary playlist files, never modifying the live `index.m3u8`.
 - Covers M3U parsing, JWT authorization, channel CRUD, daily logging, and stream health.
 
-### Frontend Tests (38 Tests)
+### Frontend Tests (39 Tests)
 Built with [Vitest](https://vitest.dev/), [React Testing Library](https://testing-library.com/), and `jsdom`:
 ```bash
 npm run test:frontend
 # or
 npm --prefix frontend test
 ```
-- Covers brand logo rendering, channel cards, language switcher, filter popover, video player, auth context, login, and admin pages.
+- Covers brand logo rendering, channel cards, language switcher, filter popover, video player, footer copyright, auth context, login, and admin pages.
 
 ---
 
@@ -425,7 +426,7 @@ Continuous Integration and Continuous Delivery are configured in [`.github/workf
 - **Concurrency**: Automatically cancels outdated queued builds when new commits are pushed.
 - **Backend Tests**: Runs all 67 backend regression tests (`node:test` + `supertest` + `tsx`).
 - **Backend Build**: Type-checks and compiles TypeScript to `backend/dist` (`tsc`).
-- **Frontend Tests**: Runs all 38 frontend regression tests (`vitest` + React Testing Library + `jsdom`).
+- **Frontend Tests**: Runs all 39 frontend regression tests (`vitest` + React Testing Library + `jsdom`).
 - **Frontend Build**: Type-checks and bundles production assets to `frontend/dist` (`vite build`).
 
 ---
@@ -461,3 +462,10 @@ Configure your web server (Nginx, Caddy, Cloudflare, etc.) to serve `frontend/di
 ## License
 
 ISC License - Open source streaming relay platform.
+
+---
+
+<p align="center">
+  <sub>&copy; 2026 <strong>TV4All</strong>. All rights reserved.</sub>
+</p>
+

@@ -31,5 +31,8 @@
   "common": {
     "loading": "Loading...",
     "refresh": "Refresh"
+  },
+  "footer": {
+    "copyright": "All rights reserved."
   }
 }
