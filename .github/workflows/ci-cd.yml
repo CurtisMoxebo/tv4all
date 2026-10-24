@@ -15,11 +15,11 @@ permissions:
   contents: read
 
 jobs:
-  # -------------------------------------------------------------
-  # Job 1: Backend Regression Tests & Build
-  # -------------------------------------------------------------
-  backend-regression-tests:
-    name: Backend Regression Tests (Node.js 20)
+  # =============================================================
+  # 1. Backend Regression Tests
+  # =============================================================
+  backend-tests:
+    name: "Backend: Regression Tests (67 tests)"
     runs-on: ubuntu-latest
 
     steps:
@@ -36,9 +36,6 @@ jobs:
       - name: Install backend dependencies
         run: npm --prefix backend ci
 
-      - name: Type-check and build backend
-        run: npm --prefix backend run build
-
       - name: Run Backend Regression Tests (node:test)
         run: npm --prefix backend test
 
@@ -47,8 +44,41 @@ jobs:
         run: |
           echo "### 🟢 Backend Regression Tests" >> $GITHUB_STEP_SUMMARY
           echo "- **Framework**: Node.js native test runner (\`node:test\`) + \`supertest\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Suites**: M3U Parser, Authentication/JWT, Channels CRUD, Daily Logger, Stream/Health" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Suites**: 5 suites (M3U Parser, Authentication/JWT, Channels CRUD, Logger, Stream/Health)" >> $GITHUB_STEP_SUMMARY
           echo "- **Total Tests**: 67 automated test cases" >> $GITHUB_STEP_SUMMARY
+
+  # =============================================================
+  # 2. Backend Build
+  # =============================================================
+  backend-build:
+    name: "Backend: Build (TypeScript tsc)"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm --prefix backend ci
+
+      - name: Build backend
+        run: npm --prefix backend run build
+
+      - name: Verify build artifacts
+        run: |
+          if [ ! -f "backend/dist/index.js" ]; then
+            echo "Error: backend/dist/index.js was not generated!"
+            exit 1
+          fi
+          echo "Backend build output verified:"
+          ls -la backend/dist
 
       - name: Upload backend build artifact
         uses: actions/upload-artifact@v4
@@ -57,11 +87,11 @@ jobs:
           path: backend/dist/
           retention-days: 7
 
-  # -------------------------------------------------------------
-  # Job 2: Frontend Regression Tests & Build
-  # -------------------------------------------------------------
-  frontend-regression-tests:
-    name: Frontend Regression Tests (React 18 & Vitest)
+  # =============================================================
+  # 3. Frontend Regression Tests
+  # =============================================================
+  frontend-tests:
+    name: "Frontend: Regression Tests (38 tests)"
     runs-on: ubuntu-latest
 
     steps:
@@ -78,9 +108,6 @@ jobs:
       - name: Install frontend dependencies
         run: npm --prefix frontend ci
 
-      - name: Type-check and build frontend
-        run: npm --prefix frontend run build
-
       - name: Run Frontend Regression Tests (Vitest)
         run: npm --prefix frontend test
 
@@ -89,8 +116,41 @@ jobs:
         run: |
           echo "### 🟢 Frontend Regression Tests" >> $GITHUB_STEP_SUMMARY
           echo "- **Framework**: Vitest + React Testing Library + jsdom" >> $GITHUB_STEP_SUMMARY
-          echo "- **Suites**: Logo, ChannelCard, LanguageSelector, FilterPopover, VideoPlayer, AuthContext, i18n, LoginPage, HomePage, ManageChannelsPage" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Suites**: 10 suites (Components, Pages, Context, i18n)" >> $GITHUB_STEP_SUMMARY
           echo "- **Total Tests**: 38 automated test cases" >> $GITHUB_STEP_SUMMARY
+
+  # =============================================================
+  # 4. Frontend Build
+  # =============================================================
+  frontend-build:
+    name: "Frontend: Build (Vite & Tailwind)"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm --prefix frontend ci
+
+      - name: Build frontend
+        run: npm --prefix frontend run build
+
+      - name: Verify build artifacts
+        run: |
+          if [ ! -f "frontend/dist/index.html" ]; then
+            echo "Error: frontend/dist/index.html was not generated!"
+            exit 1
+          fi
+          echo "Frontend build output verified:"
+          ls -la frontend/dist
 
       - name: Upload frontend build artifact
         uses: actions/upload-artifact@v4
@@ -99,12 +159,12 @@ jobs:
           path: frontend/dist/
           retention-days: 7
 
-  # -------------------------------------------------------------
-  # Job 3: Package & Release (Only if all regression tests pass)
-  # -------------------------------------------------------------
+  # =============================================================
+  # 5. Continuous Delivery: Package Production Release
+  # =============================================================
   package-release:
-    name: Package Release Bundle (CD)
-    needs: [ backend-regression-tests, frontend-regression-tests ]
+    name: "Package Release Bundle (CD)"
+    needs: [ backend-tests, backend-build, frontend-tests, frontend-build ]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
 
@@ -136,7 +196,9 @@ jobs:
             cp index.m3u8 release/
           fi
           echo "### 📦 Production Bundle Assembled" >> $GITHUB_STEP_SUMMARY
-          echo "All 105 regression tests passed. Production bundle packaged successfully." >> $GITHUB_STEP_SUMMARY
+          echo "- All 105 regression tests passed (67 backend, 38 frontend)." >> $GITHUB_STEP_SUMMARY
+          echo "- Backend and frontend builds completed and verified." >> $GITHUB_STEP_SUMMARY
+          echo "- Production bundle packaged for deployment." >> $GITHUB_STEP_SUMMARY
 
       - name: Upload production release archive
         uses: actions/upload-artifact@v4
