@@ -4,5 +4,4 @@ dist/
 *.log
 logs/
 .DS_Store
-
-
+index.m3u8

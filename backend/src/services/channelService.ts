@@ -3,18 +3,232 @@ import path from 'path';
 import { Channel, ChannelSummary, GroupInfo } from '../types/channel';
 import { parseM3U } from '../utils/m3uParser';
 
+export class ValidationError extends Error {
+  public status: number = 400;
+  public errors: string[];
+
+  constructor(message: string, errors: string[] = []) {
+    super(message);
+    this.name = 'ValidationError';
+    this.errors = errors;
+  }
+}
+
+function isValidUrl(str: string): boolean {
+  try {
+    const parsed = new URL(str);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function escapeM3UAttribute(val: string): string {
+  return val.replace(/"/g, "'").trim();
+}
+
+/**
+ * Validates each field of the channel payload.
+ */
+export function validateChannelPayload(payload: any): {
+  isValid: boolean;
+  errors: string[];
+  sanitized?: {
+    name: string;
+    url: string;
+    logo: string;
+    group: string;
+    id: string;
+    chno: string;
+    country: string;
+  };
+} {
+  const errors: string[] = [];
+
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return {
+      isValid: false,
+      errors: ['Request body must be a JSON object containing channel fields']
+    };
+  }
+
+  // 1. Validate 'name'
+  const rawName = payload.name ?? payload.tvgName ?? payload.title;
+  let sanitizedName = '';
+  if (rawName === undefined || rawName === null) {
+    errors.push("Field 'name' is required");
+  } else if (typeof rawName !== 'string') {
+    errors.push("Field 'name' must be a string");
+  } else {
+    const trimmed = rawName.trim();
+    if (trimmed.length === 0) {
+      errors.push("Field 'name' cannot be empty");
+    } else if (trimmed.includes('\n') || trimmed.includes('\r')) {
+      errors.push("Field 'name' cannot contain newline characters");
+    } else {
+      sanitizedName = trimmed;
+    }
+  }
+
+  // 2. Validate 'url'
+  const rawUrl = payload.url ?? payload.streamUrl;
+  let sanitizedUrl = '';
+  if (rawUrl === undefined || rawUrl === null) {
+    errors.push("Field 'url' is required");
+  } else if (typeof rawUrl !== 'string') {
+    errors.push("Field 'url' must be a string");
+  } else {
+    const trimmed = rawUrl.trim();
+    if (trimmed.length === 0) {
+      errors.push("Field 'url' cannot be empty");
+    } else if (trimmed.includes('\n') || trimmed.includes('\r')) {
+      errors.push("Field 'url' cannot contain newline characters");
+    } else if (!isValidUrl(trimmed)) {
+      errors.push(`Field 'url' must be a valid HTTP or HTTPS URL (received '${trimmed}')`);
+    } else {
+      sanitizedUrl = trimmed;
+    }
+  }
+
+  // 3. Validate 'logo' (optional, defaults to empty)
+  const rawLogo = payload.logo ?? payload.tvgLogo;
+  let sanitizedLogo = '';
+  if (rawLogo !== undefined && rawLogo !== null) {
+    if (typeof rawLogo !== 'string') {
+      errors.push("Field 'logo' must be a string");
+    } else {
+      const trimmed = rawLogo.trim();
+      if (trimmed.includes('\n') || trimmed.includes('\r')) {
+        errors.push("Field 'logo' cannot contain newline characters");
+      } else if (trimmed.length > 0 && !isValidUrl(trimmed)) {
+        errors.push(`Field 'logo' must be a valid HTTP or HTTPS URL (received '${trimmed}')`);
+      } else {
+        sanitizedLogo = trimmed;
+      }
+    }
+  }
+
+  // 4. Validate 'group' (optional, defaults to 'General')
+  const rawGroup = payload.group ?? payload.groupTitle ?? payload.category;
+  let sanitizedGroup = 'General';
+  if (rawGroup !== undefined && rawGroup !== null) {
+    if (typeof rawGroup !== 'string') {
+      errors.push("Field 'group' must be a string");
+    } else {
+      const trimmed = rawGroup.trim();
+      if (trimmed.includes('\n') || trimmed.includes('\r')) {
+        errors.push("Field 'group' cannot contain newline characters");
+      } else if (trimmed.length === 0) {
+        errors.push("Field 'group' cannot be an empty string");
+      } else {
+        sanitizedGroup = trimmed;
+      }
+    }
+  }
+
+  // 5. Validate 'id' (optional, defaults to derived id from name)
+  const rawId = payload.id ?? payload.tvgId;
+  let sanitizedId = '';
+  if (rawId !== undefined && rawId !== null) {
+    if (typeof rawId !== 'string') {
+      errors.push("Field 'id' must be a string");
+    } else {
+      const trimmed = rawId.trim();
+      if (trimmed.includes('\n') || trimmed.includes('\r')) {
+        errors.push("Field 'id' cannot contain newline characters");
+      } else if (trimmed.length === 0) {
+        errors.push("Field 'id' cannot be an empty string");
+      } else {
+        sanitizedId = trimmed;
+      }
+    }
+  } else if (sanitizedName) {
+    const slug = sanitizedName.replace(/[^a-zA-Z0-9]+/g, '');
+    sanitizedId = slug ? `${slug}.fr` : `channel-${Date.now().toString(36)}`;
+  }
+
+  // 6. Validate 'chno' (optional)
+  const rawChno = payload.chno ?? payload.tvgChno ?? payload.channelNumber;
+  let sanitizedChno = '-';
+  if (rawChno !== undefined && rawChno !== null) {
+    if (typeof rawChno === 'number') {
+      sanitizedChno = String(rawChno);
+    } else if (typeof rawChno === 'string') {
+      const trimmed = rawChno.trim();
+      if (trimmed.includes('\n') || trimmed.includes('\r')) {
+        errors.push("Field 'chno' cannot contain newline characters");
+      } else {
+        sanitizedChno = trimmed || '-';
+      }
+    } else {
+      errors.push("Field 'chno' must be a number or string");
+    }
+  }
+
+  // 7. Validate 'country' (optional, defaults to 'FR')
+  const rawCountry = payload.country ?? payload.tvgCountry;
+  let sanitizedCountry = 'FR';
+  if (rawCountry !== undefined && rawCountry !== null) {
+    if (typeof rawCountry !== 'string') {
+      errors.push("Field 'country' must be a string");
+    } else {
+      const trimmed = rawCountry.trim();
+      if (trimmed.includes('\n') || trimmed.includes('\r')) {
+        errors.push("Field 'country' cannot contain newline characters");
+      } else if (trimmed.length === 0) {
+        errors.push("Field 'country' cannot be an empty string");
+      } else {
+        sanitizedCountry = trimmed;
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    return {
+      isValid: false,
+      errors
+    };
+  }
+
+  return {
+    isValid: true,
+    errors: [],
+    sanitized: {
+      name: sanitizedName,
+      url: sanitizedUrl,
+      logo: sanitizedLogo,
+      group: sanitizedGroup,
+      id: sanitizedId,
+      chno: sanitizedChno,
+      country: sanitizedCountry
+    }
+  };
+}
+
 class ChannelService {
   private channels: Channel[] = [];
   private lastMtime: number = 0;
 
   /**
-   * Resolves the path to the backend/index.m3u8 file.
+   * Resolves the path to the channel list file.
+   * Prioritizes the environment variable (CHANNELS_FILE_PATH / CHANNEL_LIST_PATH).
    */
   public getPlaylistPath(): string {
+    const envPath =
+      process.env.CHANNELS_FILE_PATH ||
+      process.env.CHANNEL_LIST_PATH ||
+      process.env.CHANNELS_PATH;
+
+    if (envPath) {
+      return path.resolve(envPath);
+    }
+
     const candidates = [
       path.resolve(process.cwd(), 'index.m3u8'),
+      path.resolve(process.cwd(), '..', 'index.m3u8'),
       path.resolve(process.cwd(), 'backend', 'index.m3u8'),
       path.resolve(__dirname, '../../index.m3u8'),
+      path.resolve(__dirname, '../../../index.m3u8'),
       path.resolve(__dirname, '../../../backend/index.m3u8')
     ];
 
@@ -24,7 +238,7 @@ class ChannelService {
       }
     }
 
-    return path.resolve(process.cwd(), 'backend', 'index.m3u8');
+    return path.resolve(process.cwd(), 'index.m3u8');
   }
 
   /**
@@ -69,6 +283,72 @@ class ChannelService {
       }
       throw err;
     }
+  }
+
+  /**
+   * Validates payload fields and appends the new channel to backend/index.m3u8.
+   */
+  public async addChannel(payload: any): Promise<Channel> {
+    const validation = validateChannelPayload(payload);
+    if (!validation.isValid || !validation.sanitized) {
+      throw new ValidationError('Channel payload validation failed', validation.errors);
+    }
+
+    const { name, url, logo, group, id, chno, country } = validation.sanitized;
+    const playlistPath = this.getPlaylistPath();
+
+    // Ensure playlist file exists
+    if (!fs.existsSync(playlistPath)) {
+      fs.writeFileSync(playlistPath, '#EXTM3U\n', 'utf-8');
+    }
+
+    // Ensure unique channel id
+    const existingChannels = await this.loadChannels();
+    const existingIds = new Set(existingChannels.map(c => c.id.toLowerCase()));
+    let uniqueId = id;
+    if (existingIds.has(uniqueId.toLowerCase())) {
+      let counter = 2;
+      while (existingIds.has(`${uniqueId.toLowerCase()}-${counter}`)) {
+        counter++;
+      }
+      uniqueId = `${uniqueId}-${counter}`;
+    }
+
+    // Build #EXTINF line
+    const attrs: string[] = [];
+    attrs.push(`tvg-name="${escapeM3UAttribute(name)}"`);
+    if (logo) {
+      attrs.push(`tvg-logo="${escapeM3UAttribute(logo)}"`);
+    }
+    attrs.push(`tvg-id="${escapeM3UAttribute(uniqueId)}"`);
+    if (chno) {
+      attrs.push(`tvg-chno="${escapeM3UAttribute(chno)}"`);
+    }
+    if (country) {
+      attrs.push(`tvg-country="${escapeM3UAttribute(country)}"`);
+    }
+    attrs.push(`group-title="${escapeM3UAttribute(group)}"`);
+
+    const extinfLine = `#EXTINF:-1 ${attrs.join(' ')},${name}`;
+
+    // Append to file
+    const existingContent = fs.readFileSync(playlistPath, 'utf-8');
+    const separator = existingContent.endsWith('\n') ? '' : '\n';
+    const newEntry = `${separator}${extinfLine}\n${url}\n`;
+
+    fs.appendFileSync(playlistPath, newEntry, 'utf-8');
+    console.log(`[ChannelService] Appended new channel '${name}' (${uniqueId}) to ${playlistPath}`);
+
+    // Immediately reload channels cache
+    await this.loadChannels(true);
+
+    return {
+      id: uniqueId,
+      name,
+      logo,
+      group,
+      url
+    };
   }
 
   /**

@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { channelService } from '../services/channelService';
+import { channelService, ValidationError } from '../services/channelService';
 import { broadcastManager } from '../services/broadcast/BroadcastManager';
 
 const router = Router();
@@ -22,6 +22,52 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const channels = await channelService.getChannels({ group, search, force });
     res.json(channels);
   } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/channels
+ * Validates payload fields and adds a new channel to backend/index.m3u8.
+ */
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const channel = await channelService.addChannel(req.body);
+    return res.status(201).json({
+      message: 'Channel added successfully',
+      channel
+    });
+  } catch (error: any) {
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: error.message,
+        errors: error.errors
+      });
+    }
+    next(error);
+  }
+});
+
+/**
+ * POST /api/channels/add
+ * Alias for POST /api/channels.
+ */
+router.post('/add', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const channel = await channelService.addChannel(req.body);
+    return res.status(201).json({
+      message: 'Channel added successfully',
+      channel
+    });
+  } catch (error: any) {
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: error.message,
+        errors: error.errors
+      });
+    }
     next(error);
   }
 });
@@ -93,4 +139,3 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 export default router;
-
