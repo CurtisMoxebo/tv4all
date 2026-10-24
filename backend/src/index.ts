@@ -71,23 +71,33 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: 'Internal Server Error' });
 });
 
-// Start server
-const server = app.listen(PORT, () => {
-  console.log(`[Server] Backend is running at http://localhost:${PORT}`);
-});
+// Start server (only when not running under test runner)
+let server: any = null;
+if (process.env.NODE_ENV !== 'test') {
+  server = app.listen(PORT, () => {
+    console.log(`[Server] Backend is running at http://localhost:${PORT}`);
+  });
+}
 
 // Graceful shutdown
 const shutdown = (signal: string) => {
   console.log(`[Server] Received ${signal}, closing server gracefully...`);
   broadcastManager.stopAll();
-  server.close(() => {
-    console.log('[Server] HTTP server closed');
+  if (server) {
+    server.close(() => {
+      console.log('[Server] HTTP server closed');
+      process.exit(0);
+    });
+  } else {
     process.exit(0);
-  });
+  }
 };
 
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
+if (process.env.NODE_ENV !== 'test') {
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+}
 
+export { app, server };
 export default app;
 
