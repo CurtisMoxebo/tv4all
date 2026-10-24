@@ -13,7 +13,7 @@ import { FilterPopover, SortOrder } from '../components/FilterPopover';
 
 export const HomePage: React.FC = () => {
   const { t } = useTranslation();
-  const { token, isAuthenticated, logout } = useAuth();
+  const { token, isAuthenticated, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { channelId } = useParams<{ channelId?: string }>();
@@ -199,7 +199,38 @@ export const HomePage: React.FC = () => {
           <div className="flex items-center space-x-3">
             <LanguageSelector />
 
-            <div className="flex items-center pl-3 border-l border-[#1e2c47]">
+            <div className="flex items-center space-x-1 pl-3 border-l border-[#1e2c47]">
+              {/* Manage Channels (Admin Only) */}
+              {isAdmin && (
+                <Link
+                  to="/manage-channels"
+                  title={t('nav.manageChannels', 'Manage Channels')}
+                  aria-label={t('nav.manageChannels', 'Manage Channels')}
+                  className="group p-2 sm:px-3 sm:py-1.5 rounded-xl transition-all duration-150 flex items-center space-x-1.5 cursor-pointer text-slate-400 hover:text-white hover:bg-[#151f32] focus:outline-none"
+                >
+                  <svg
+                    className="w-5 h-5 transition-transform duration-150 group-hover:scale-110"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  <span className="text-xs font-semibold hidden sm:inline">{t('nav.manageChannels', 'Manage Channels')}</span>
+                </Link>
+              )}
+
               <button
                 type="button"
                 onClick={logout}
@@ -255,6 +286,14 @@ export const HomePage: React.FC = () => {
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#151f32] text-slate-300 border border-[#263756]">
                   {filteredChannels.length}
                 </span>
+                {isAdmin && (
+                  <Link
+                    to="/manage-channels"
+                    className="text-[10px] font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-950/40 border border-indigo-800/40 px-2 py-0.5 rounded-md ml-1"
+                  >
+                    + Manage
+                  </Link>
+                )}
               </div>
               <button
                 type="button"
@@ -289,6 +328,14 @@ export const HomePage: React.FC = () => {
                     {filteredChannels.length} {filteredChannels.length === 1 ? 'channel' : 'channels'} available
                   </p>
                 </div>
+                {isAdmin && (
+                  <Link
+                    to="/manage-channels"
+                    className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-950/40 border border-indigo-800/40 px-2 py-1 rounded-lg flex items-center space-x-1 hover:border-indigo-500/50 transition-colors"
+                  >
+                    <span>+ Manage</span>
+                  </Link>
+                )}
               </div>
 
               {/* Search & Filter Row */}

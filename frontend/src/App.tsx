@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
+import { ManageChannelsPage } from './pages/ManageChannelsPage';
 
 export const App: React.FC = () => {
   return (
@@ -14,6 +15,10 @@ export const App: React.FC = () => {
 
           {/* Login Route */}
           <Route path="/login" element={<LoginPage />} />
+
+          {/* Manage Channels Route (Admin Only) */}
+          <Route path="/manage-channels" element={<ManageChannelsPage />} />
+          <Route path="/admin/channels" element={<ManageChannelsPage />} />
 
           {/* Channel Deep-link Route */}
           <Route path="/:channelId" element={<HomePage />} />

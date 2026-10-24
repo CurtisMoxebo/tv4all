@@ -6,10 +6,23 @@
   },
   "nav": {
     "channels": "Channels",
+    "manageChannels": "Manage Channels",
     "broadcasts": "Broadcasts",
     "logs": "Logs",
     "login": "Login",
     "logout": "Logout"
+  },
+  "admin": {
+    "manageTitle": "Manage Channels",
+    "manageSubtitle": "Add and remove channels from the M3U playlist file",
+    "addChannel": "Add New Channel",
+    "deleteChannel": "Delete Channel",
+    "confirmDelete": "Are you sure you want to delete this channel?",
+    "channelDeleted": "Channel deleted successfully",
+    "channelAdded": "Channel added successfully",
+    "backToHome": "Back to Player",
+    "accessDenied": "Admin Access Required",
+    "accessDeniedDesc": "You must be signed in as an administrator to manage channels."
   },
   "auth": {
     "title": "Authentication",
@@ -46,4 +59,3 @@
     "refresh": "Refresh"
   }
 }
-

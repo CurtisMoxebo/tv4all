@@ -9,9 +9,9 @@ export const API_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/auth/login`,
   ME: `${API_BASE_URL}/auth/me`,
   CHANNELS: `${API_BASE_URL}/channels`,
+  CHANNEL_DELETE: (channelId: string) => `${API_BASE_URL}/channels/${encodeURIComponent(channelId)}`,
   GROUPS: `${API_BASE_URL}/groups`,
   STREAM: (channelId: string) => `${API_BASE_URL}/stream/${channelId}`,
   BROADCASTS: `${API_BASE_URL}/broadcasts`,
   LOGS: `${API_BASE_URL}/logs`
 };
-

@@ -1,14 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../config/api';
 
-interface User {
+export interface User {
   username: string;
+  role?: string;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   token: string | null;
   user: User | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
@@ -35,9 +37,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return null;
   });
 
+  // Check if current user is an admin
+  const isAdmin = Boolean(
+    user && (user.role === 'admin' || user.username.toLowerCase() === 'tv4alladmin')
+  );
+
   // Verify token validity on initial mount if token exists
   useEffect(() => {
-    if (token && !user) {
+    if (token) {
       // Decode or fetch me endpoint
       fetch(API_ENDPOINTS.ME, {
         headers: { Authorization: `Bearer ${token}` }
@@ -97,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token,
         user,
         isAuthenticated: !!token,
+        isAdmin,
         login,
         logout
       }}
@@ -113,4 +121,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

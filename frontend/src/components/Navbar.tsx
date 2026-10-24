@@ -6,7 +6,7 @@ import { LanguageSelector } from './LanguageSelector';
 
 export const Navbar: React.FC = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, isAdmin, user, logout } = useAuth();
   const location = useLocation();
 
   return (
@@ -56,12 +56,22 @@ export const Navbar: React.FC = () => {
           {/* Language Switcher */}
           <LanguageSelector />
 
-          {/* User profile / Logout */}
+          {/* User profile / Manage Channels / Logout */}
           {isAuthenticated ? (
-            <div className="flex items-center space-x-3 pl-2 border-l border-slate-800">
-              <span className="text-xs text-slate-300 font-medium">
+            <div className="flex items-center space-x-2 pl-2 border-l border-slate-800">
+              <span className="text-xs text-slate-300 font-medium mr-1">
                 {user?.username}
               </span>
+
+              {isAdmin && (
+                <Link
+                  to="/manage-channels"
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 bg-slate-800/80 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors cursor-pointer"
+                >
+                  {t('nav.manageChannels', 'Manage Channels')}
+                </Link>
+              )}
+
               <button
                 onClick={logout}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-300 bg-rose-950/50 border border-rose-800/50 hover:bg-rose-900/60 transition-colors cursor-pointer"
@@ -77,4 +87,3 @@ export const Navbar: React.FC = () => {
 };
 
 export default Navbar;
-

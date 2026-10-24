@@ -6,10 +6,23 @@
   },
   "nav": {
     "channels": "Canales",
+    "manageChannels": "Gestionar canales",
     "broadcasts": "Emisiones",
     "logs": "Registros",
     "login": "Iniciar sesión",
     "logout": "Cerrar sesión"
+  },
+  "admin": {
+    "manageTitle": "Gestión de canales",
+    "manageSubtitle": "Agregar y eliminar canales del archivo de lista M3U",
+    "addChannel": "Agregar canal",
+    "deleteChannel": "Eliminar canal",
+    "confirmDelete": "¿Estás seguro de que deseas eliminar este canal?",
+    "channelDeleted": "Canal eliminado con éxito",
+    "channelAdded": "Canal agregado con éxito",
+    "backToHome": "Volver al reproductor",
+    "accessDenied": "Acceso de administrador requerido",
+    "accessDeniedDesc": "Debes iniciar sesión como administrador para gestionar canales."
   },
   "auth": {
     "title": "Autenticación",
@@ -46,4 +59,3 @@
     "refresh": "Actualizar"
   }
 }
-

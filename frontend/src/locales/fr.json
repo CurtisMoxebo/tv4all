@@ -6,10 +6,23 @@
   },
   "nav": {
     "channels": "Chaînes",
+    "manageChannels": "Gérer les chaînes",
     "broadcasts": "Diffusions",
     "logs": "Journaux",
     "login": "Connexion",
     "logout": "Déconnexion"
+  },
+  "admin": {
+    "manageTitle": "Gestion des chaînes",
+    "manageSubtitle": "Ajouter et supprimer des chaînes du fichier playlist M3U",
+    "addChannel": "Ajouter une chaîne",
+    "deleteChannel": "Supprimer la chaîne",
+    "confirmDelete": "Voulez-vous vraiment supprimer cette chaîne ?",
+    "channelDeleted": "Chaîne supprimée avec succès",
+    "channelAdded": "Chaîne ajoutée avec succès",
+    "backToHome": "Retour au lecteur",
+    "accessDenied": "Accès administrateur requis",
+    "accessDeniedDesc": "Vous devez être connecté en tant qu'administrateur pour gérer les chaînes."
   },
   "auth": {
     "title": "Authentification",
@@ -46,4 +59,3 @@
     "refresh": "Actualiser"
   }
 }
-
