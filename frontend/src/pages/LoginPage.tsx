@@ -63,10 +63,11 @@ export const LoginPage: React.FC = () => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="username" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
               {t('auth.username')}
             </label>
             <input
+              id="username"
               type="text"
               required
               autoFocus
@@ -77,10 +78,11 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="password" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
               {t('auth.password')}
             </label>
             <input
+              id="password"
               type="password"
               required
               value={password}

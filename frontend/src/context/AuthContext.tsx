@@ -15,7 +15,7 @@ export interface AuthContextType {
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_KEY = 'tv4all_token';
 const USER_KEY = 'tv4all_user';
