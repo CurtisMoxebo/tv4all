@@ -4,7 +4,7 @@ import { Channel } from '../types/channel';
  * Extracts an attribute value from an #EXTINF line.
  * Handles both key="value" and key='value' as well as unquoted key=value.
  */
-function extractAttribute(line: string, attributeName: string): string | null {
+export function extractAttribute(line: string, attributeName: string): string | null {
   const regex = new RegExp(`${attributeName}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s,]+))`, 'i');
   const match = line.match(regex);
   if (match) {

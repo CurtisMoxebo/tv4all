@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Channel, ChannelSummary, GroupInfo } from '../types/channel';
-import { parseM3U } from '../utils/m3uParser';
+import { parseM3U, extractAttribute } from '../utils/m3uParser';
 
 export class ValidationError extends Error {
   public status: number = 400;
@@ -349,6 +349,108 @@ class ChannelService {
       group,
       url
     };
+  }
+
+  /**
+   * Deletes a channel from the M3U playlist file by its channel ID.
+   * Returns the deleted Channel object, or null if not found.
+   */
+  public async deleteChannel(channelId: string): Promise<Channel | null> {
+    if (!channelId || typeof channelId !== 'string') {
+      return null;
+    }
+
+    const playlistPath = this.getPlaylistPath();
+    if (!fs.existsSync(playlistPath)) {
+      return null;
+    }
+
+    const content = fs.readFileSync(playlistPath, 'utf-8');
+    const lines = content.split(/\r?\n/);
+    const idCounts = new Map<string, number>();
+
+    let currentExtinf: string | null = null;
+    let currentExtinfIndex: number = -1;
+    let targetEntry: {
+      channel: Channel;
+      extinfIndex: number;
+      urlIndex: number;
+    } | null = null;
+
+    const trimmedTargetId = channelId.trim().toLowerCase();
+
+    for (let i = 0; i < lines.length; i++) {
+      const rawLine = lines[i];
+      const line = rawLine.trim();
+
+      if (!line) {
+        continue;
+      }
+
+      if (line.startsWith('#EXTINF:')) {
+        currentExtinf = line;
+        currentExtinfIndex = i;
+        continue;
+      }
+
+      if (line.startsWith('#')) {
+        continue;
+      }
+
+      if (currentExtinf && currentExtinfIndex !== -1) {
+        const url = line;
+
+        const commaIndex = currentExtinf.indexOf(',');
+        const rawTitle = commaIndex !== -1 ? currentExtinf.slice(commaIndex + 1).trim() : '';
+
+        const tvgName = extractAttribute(currentExtinf, 'tvg-name');
+        const tvgId = extractAttribute(currentExtinf, 'tvg-id');
+        const tvgLogo = extractAttribute(currentExtinf, 'tvg-logo');
+        const groupTitle = extractAttribute(currentExtinf, 'group-title');
+
+        const name = tvgName || rawTitle || 'Unknown Channel';
+        const logo = tvgLogo || '';
+        const group = groupTitle || 'General';
+
+        let baseId = tvgId || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `channel-${idCounts.size + 1}`;
+        const count = idCounts.get(baseId) || 0;
+        idCounts.set(baseId, count + 1);
+        const uniqueId = count === 0 ? baseId : `${baseId}-${count + 1}`;
+
+        if (!targetEntry && uniqueId.toLowerCase() === trimmedTargetId) {
+          targetEntry = {
+            channel: {
+              id: uniqueId,
+              name,
+              logo,
+              group,
+              url
+            },
+            extinfIndex: currentExtinfIndex,
+            urlIndex: i
+          };
+          break;
+        }
+
+        currentExtinf = null;
+        currentExtinfIndex = -1;
+      }
+    }
+
+    if (!targetEntry) {
+      return null;
+    }
+
+    // Remove the target channel's EXTINF and URL lines
+    const remainingLines = lines.filter((_, idx) => idx !== targetEntry!.extinfIndex && idx !== targetEntry!.urlIndex);
+    const newContent = remainingLines.join('\n');
+    fs.writeFileSync(playlistPath, newContent, 'utf-8');
+    console.log(`[ChannelService] Deleted channel '${targetEntry.channel.name}' (${targetEntry.channel.id}) from ${playlistPath}`);
+
+    // Immediately reload cache
+    await this.loadChannels(true);
+
+    return targetEntry.channel;
   }
 
   /**

@@ -73,6 +73,106 @@ router.post('/add', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 /**
+ * DELETE /api/channels/:id
+ * Removes a channel by ID from the M3U playlist file.
+ */
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const channelId = req.params.id;
+    if (!channelId || !channelId.trim()) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Channel ID is required'
+      });
+    }
+
+    const deletedChannel = await channelService.deleteChannel(channelId);
+    if (!deletedChannel) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: `Channel '${channelId}' not found`
+      });
+    }
+
+    // Stop active broadcast if one exists
+    broadcastManager.stopBroadcast(deletedChannel.id);
+
+    return res.json({
+      message: 'Channel deleted successfully',
+      channel: deletedChannel
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /api/channels
+ * Removes a channel by ID provided in request body or query parameter.
+ */
+router.delete('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const channelId = (req.body?.id || req.query?.id) as string | undefined;
+    if (!channelId || !channelId.trim()) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Channel ID is required (provide in JSON body or ?id= parameter)'
+      });
+    }
+
+    const deletedChannel = await channelService.deleteChannel(channelId);
+    if (!deletedChannel) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: `Channel '${channelId}' not found`
+      });
+    }
+
+    broadcastManager.stopBroadcast(deletedChannel.id);
+
+    return res.json({
+      message: 'Channel deleted successfully',
+      channel: deletedChannel
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/channels/:id/delete
+ * Alias for DELETE /api/channels/:id
+ */
+router.post('/:id/delete', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const channelId = req.params.id;
+    if (!channelId || !channelId.trim()) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Channel ID is required'
+      });
+    }
+
+    const deletedChannel = await channelService.deleteChannel(channelId);
+    if (!deletedChannel) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: `Channel '${channelId}' not found`
+      });
+    }
+
+    broadcastManager.stopBroadcast(deletedChannel.id);
+
+    return res.json({
+      message: 'Channel deleted successfully',
+      channel: deletedChannel
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * GET /api/channels/groups
  * Returns available channel groups.
  */
