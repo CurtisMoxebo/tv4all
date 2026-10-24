@@ -7,7 +7,7 @@ import { Channel } from '../../types/channel';
 describe('VideoPlayer Component Regression Tests', () => {
   it('displays logo placeholder at center when no channel is selected', () => {
     const { container } = renderWithProviders(<VideoPlayer channel={null} token={null} />);
-    expect(container.textContent).toContain('tv4all');
+    expect(container.textContent).toContain('TV4ALL');
   });
 
   it('renders video element and live indicator banner when channel is selected', () => {

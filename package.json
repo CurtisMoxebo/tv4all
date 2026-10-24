@@ -2,7 +2,7 @@
   "name": "tv4all",
   "version": "1.0.0",
   "private": true,
-  "description": "tv4all - IPTV Streaming Relay Platform",
+  "description": "TV4ALL - IPTV Streaming Relay Platform",
   "scripts": {
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",

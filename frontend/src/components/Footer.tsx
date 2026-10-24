@@ -13,7 +13,7 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-center space-x-1.5 text-xs text-slate-400">
         <span>&copy; {currentYear}</span>
         <span className="font-semibold text-white tracking-tight">
-          tv<span className="text-indigo-400">4</span>all
+          TV<span className="text-indigo-400">4</span>ALL
         </span>
         <span className="text-slate-500">&bull;</span>
         <span>{t('footer.copyright')}</span>

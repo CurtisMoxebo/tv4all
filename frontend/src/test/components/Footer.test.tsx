@@ -11,7 +11,7 @@ describe('Footer Component Regression Tests', () => {
 
     expect(footerElement).toBeInTheDocument();
     expect(footerElement.textContent).toContain(currentYear);
-    expect(footerElement.textContent).toContain('tv4all');
+    expect(footerElement.textContent).toContain('TV4ALL');
     expect(footerElement.textContent).toContain('All rights reserved.');
   });
 });

@@ -46,7 +46,7 @@ app.use('/api/broadcasts', requireAuth, (_req: Request, res: Response) => {
 // API Root info
 app.get('/api', (_req: Request, res: Response) => {
   res.json({
-    name: 'tv4all IPTV relay backend',
+    name: 'TV4ALL IPTV relay backend',
     version: '1.0.0',
     endpoints: {
       health: '/api/health',

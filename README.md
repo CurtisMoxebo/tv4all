@@ -1,4 +1,4 @@
-# tv4all - Single-Source IPTV Relay & Web Streaming Platform
+# TV4ALL - Single-Source IPTV Relay & Web Streaming Platform
 
 [![CI/CD Pipeline](https://github.com/moxeb/tv4all/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/moxeb/tv4all/actions/workflows/ci-cd.yml)
 ![Node Version](https://img.shields.io/badge/node-20.x-blue.svg)
@@ -6,9 +6,9 @@
 ![React](https://img.shields.io/badge/react-18.x-61dafb.svg)
 ![Vite](https://img.shields.io/badge/vite-6.x-646cff.svg)
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-4.x-38bdf8.svg)
-![Tests](https://img.shields.io/badge/tests-105%20passed-brightgreen.svg)
+![Tests](https://img.shields.io/badge/tests-106%20passed-brightgreen.svg)
 
-**tv4all** is a high-performance IPTV relay and web streaming platform. It solves the common limitation where IPTV providers permit only **one concurrent connection** per subscriber/stream URL. By acting as an intelligent intermediary broadcast proxy, `tv4all` opens a **single upstream connection** to the stream provider and broadcasts that live MPEG-TS / HLS stream to **multiple downstream web viewers simultaneously**.
+**TV4ALL** is a high-performance IPTV relay and web streaming platform. It solves the common limitation where IPTV providers permit only **one concurrent connection** per subscriber/stream URL. By acting as an intelligent intermediary broadcast proxy, `TV4ALL` opens a **single upstream connection** to the stream provider and broadcasts that live MPEG-TS / HLS stream to **multiple downstream web viewers simultaneously**.
 
 ---
 
@@ -56,7 +56,7 @@
 flowchart LR
     Upstream["IPTV Upstream Source<br/>(Strict 1-Connection Limit)"]
     
-    subgraph Backend ["tv4all Relay Backend (Node.js & Express)"]
+    subgraph Backend ["TV4ALL Relay Backend (Node.js & Express)"]
         BM["BroadcastManager"]
         CB["ChannelBroadcast (Single Stream Instance)<br/>+ Recent Chunk Ring Buffer<br/>+ 60s Auto-Disconnect Timer"]
         BM --> CB
@@ -466,6 +466,6 @@ ISC License - Open source streaming relay platform.
 ---
 
 <p align="center">
-  <sub>&copy; 2026 <strong>TV4All</strong>. All rights reserved.</sub>
+  <sub>&copy; 2026 <strong>TV4ALL</strong>. All rights reserved.</sub>
 </p>
 

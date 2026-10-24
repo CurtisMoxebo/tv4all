@@ -75,7 +75,7 @@ export const Logo: React.FC<LogoProps> = ({
       {/* Wordmark */}
       {showText && (
         <span className={`font-black tracking-tight text-white ${current.font}`}>
-          tv<span className="text-neutral-400">4</span>all
+          TV<span className="text-neutral-400">4</span>ALL
         </span>
       )}
     </div>

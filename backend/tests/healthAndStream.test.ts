@@ -25,7 +25,7 @@ describe('Health, API Info & Stream Status Regression Tests', () => {
       const res = await request(app).get('/api');
 
       assert.equal(res.status, 200);
-      assert.equal(res.body.name, 'tv4all IPTV relay backend');
+      assert.equal(res.body.name, 'TV4ALL IPTV relay backend');
       assert.ok(res.body.endpoints);
       assert.equal(res.body.endpoints.health, '/api/health');
       assert.equal(res.body.endpoints.auth, '/api/auth/login');
