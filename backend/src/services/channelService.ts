@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 import { Channel, ChannelSummary, GroupInfo } from '../types/channel';
 import { parseM3U } from '../utils/m3uParser';
 
@@ -15,37 +13,17 @@ class ChannelService {
     return process.env.CHANNELS_M3U_URL || process.env.M3U_URL || DEFAULT_M3U_URL;
   }
 
-  private getLocalPlaylistPath(): string | null {
-    const potentialPaths = [
-      path.resolve(process.cwd(), '..', 'm3u', 'index.m3u8'),
-      path.resolve(process.cwd(), 'm3u', 'index.m3u8'),
-      path.resolve(__dirname, '../../../m3u/index.m3u8')
-    ];
-
-    for (const localPath of potentialPaths) {
-      if (fs.existsSync(localPath)) {
-        return localPath;
-      }
-    }
-    return null;
-  }
-
   /**
-   * Fetches M3U content from remote URL, with local file fallback if needed.
+   * Fetches M3U content directly from the remote URL specified in .env.
    */
   private async fetchM3UContent(): Promise<string> {
-    // Check local playlist first
-    const localPath = this.getLocalPlaylistPath();
-    if (localPath) {
-      console.log(`[ChannelService] Loaded local playlist from ${localPath}`);
-      return fs.readFileSync(localPath, 'utf-8');
-    }
+    const url = this.m3uUrl;
+    console.log(`[ChannelService] Fetching playlist from .env URL: ${url}...`);
 
     try {
-      console.log(`[ChannelService] Fetching playlist from ${this.m3uUrl}...`);
-      const response = await fetch(this.m3uUrl, {
+      const response = await fetch(url, {
         headers: {
-          'User-Agent': 'tv4all-backend/1.0.0'
+          'User-Agent': 'tv4all-backend/1.0.0 (Mozilla/5.0)'
         }
       });
 
@@ -54,31 +32,19 @@ class ChannelService {
       }
 
       const text = await response.text();
-      console.log(`[ChannelService] Successfully fetched remote M3U (${text.length} bytes)`);
+      console.log(`[ChannelService] Successfully fetched M3U from .env URL (${text.length} bytes)`);
       return text;
     } catch (err) {
-      throw new Error(`Failed to load M3U playlist: ${(err as Error).message}`);
+      console.error(`[ChannelService] Failed to load M3U from .env URL ${url}:`, err);
+      throw new Error(`Failed to load M3U playlist from .env URL: ${(err as Error).message}`);
     }
   }
 
   /**
-   * Reloads and parses the channels playlist.
+   * Reloads and parses the channels playlist from the .env URL.
    */
   public async loadChannels(force: boolean = false): Promise<Channel[]> {
-    const localPath = this.getLocalPlaylistPath();
-    let isLocalModified = false;
-    if (localPath) {
-      try {
-        const stats = fs.statSync(localPath);
-        if (stats.mtimeMs > this.lastFetched) {
-          isLocalModified = true;
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    const isCacheExpired = Date.now() - this.lastFetched > CACHE_TTL_MS || isLocalModified;
+    const isCacheExpired = Date.now() - this.lastFetched > CACHE_TTL_MS;
 
     if (!force && this.channels.length > 0 && !isCacheExpired) {
       return this.channels;
@@ -93,7 +59,7 @@ class ChannelService {
         const content = await this.fetchM3UContent();
         this.channels = parseM3U(content);
         this.lastFetched = Date.now();
-        console.log(`[ChannelService] Loaded ${this.channels.length} channels`);
+        console.log(`[ChannelService] Loaded ${this.channels.length} channels from .env URL`);
         return this.channels;
       } finally {
         this.fetchPromise = null;
