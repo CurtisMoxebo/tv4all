@@ -423,9 +423,10 @@ Continuous Integration and Continuous Delivery are configured in [`.github/workf
 
 - **Triggers**: On every `push` or `pull_request` to `main` or `master`, or via manual trigger.
 - **Concurrency**: Automatically cancels outdated queued builds when new commits are pushed.
-- **Job 1 (Backend)**: Installs dependencies (`npm ci`), type-checks (`tsc`), and runs 67 backend tests.
-- **Job 2 (Frontend)**: Installs dependencies (`npm ci`), builds production bundle (`vite build`), and runs 38 frontend tests.
-- **Job 3 (Package Release)**: On successful pushes to `main`, compiles and uploads a deployment-ready production release archive (`tv4all-production-release`).
+- **Backend Tests**: Runs all 67 backend regression tests (`node:test` + `supertest` + `tsx`).
+- **Backend Build**: Type-checks and compiles TypeScript to `backend/dist` (`tsc`).
+- **Frontend Tests**: Runs all 38 frontend regression tests (`vitest` + React Testing Library + `jsdom`).
+- **Frontend Build**: Type-checks and bundles production assets to `frontend/dist` (`vite build`).
 
 ---
 
