@@ -31,7 +31,7 @@ const COMMON_GROUPS = ['General', 'News', 'Sport', 'Kids', 'Local', 'Music', 'Mo
 
 export const ManageChannelsPage: React.FC = () => {
   const { t } = useTranslation();
-  const { token, isAuthenticated, isAdmin, logout, user } = useAuth();
+  const { token, isAuthenticated, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
 
   // Channels state
@@ -356,19 +356,17 @@ export const ManageChannelsPage: React.FC = () => {
       <header className="border-b border-[#1e2c47] bg-[#0c1220]/95 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Left: Back Link & Logo */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <Link
               to="/"
-              className="group p-2 rounded-xl transition-all duration-150 flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-[#151f32]"
+              aria-label={t('admin.backToHome', 'Back to Player')}
               title={t('admin.backToHome', 'Back to Player')}
+              className="group p-2 rounded-xl transition-all duration-150 flex items-center justify-center text-slate-400 hover:text-white hover:bg-[#151f32]"
             >
               <svg className="w-5 h-5 transition-transform duration-150 group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              <span className="text-xs font-semibold hidden md:inline">{t('admin.backToHome', 'Back to Player')}</span>
             </Link>
-
-            <div className="h-5 w-px bg-[#1e2c47] hidden md:block" />
 
             <Link to="/">
               <Logo size="md" />
@@ -383,17 +381,15 @@ export const ManageChannelsPage: React.FC = () => {
           <div className="flex items-center space-x-3">
             <LanguageSelector />
 
-            <div className="flex items-center space-x-2 pl-3 border-l border-[#1e2c47]">
-              <span className="text-xs text-slate-400 hidden sm:inline font-mono">
-                {user?.username}
-              </span>
+            <div className="flex items-center pl-3 border-l border-[#1e2c47]">
               <button
                 type="button"
                 onClick={logout}
                 title={t('nav.logout')}
-                className="p-2 sm:px-3 sm:py-1.5 rounded-xl transition-all duration-150 flex items-center space-x-1.5 text-slate-400 hover:text-white hover:bg-[#151f32] cursor-pointer"
+                aria-label={t('nav.logout')}
+                className="group p-2 sm:px-3 sm:py-1.5 rounded-xl transition-all duration-150 flex items-center space-x-1.5 text-slate-400 hover:text-white hover:bg-[#151f32] cursor-pointer"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 transition-transform duration-150 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 <span className="text-xs font-semibold hidden sm:inline">{t('nav.logout')}</span>
@@ -1017,10 +1013,6 @@ export const ManageChannelsPage: React.FC = () => {
 
             <p className="text-sm text-slate-300">
               Are you sure you want to delete <span className="font-bold text-white">"{channelToDelete.name}"</span> (<code className="text-xs text-indigo-300 bg-[#151f32] px-1.5 py-0.5 rounded">{channelToDelete.id}</code>)?
-            </p>
-
-            <p className="text-xs text-slate-400">
-              This channel will be immediately removed from the <code className="text-slate-300">index.m3u8</code> playlist file and active broadcasts will be closed.
             </p>
 
             {deleteError && (
