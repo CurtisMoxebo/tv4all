@@ -172,7 +172,7 @@ jobs:
       - name: Checkout latest main branch
         shell: powershell
         run: |
-          cd C:\tv4all
+          cd C:\Projects\tv4all
           git fetch origin
           git reset --hard origin/main
 
