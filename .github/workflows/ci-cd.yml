@@ -178,11 +178,11 @@ jobs:
           git fetch origin
           git reset --hard origin/main
 
-      - name: Install backend production dependencies
+      - name: Install backend dependencies
         shell: powershell
         run: |
           cd C:\Projects\tv4all
-          npm --prefix backend ci --omit=dev
+          npm --prefix backend ci
 
       - name: Compile backend TypeScript
         shell: powershell
