@@ -172,6 +172,8 @@ jobs:
       - name: Checkout latest main branch
         shell: powershell
         run: |
+          git config --global --add safe.directory C:/Projects/tv4all
+          git config --global --add safe.directory '*'
           cd C:\Projects\tv4all
           git fetch origin
           git reset --hard origin/main
@@ -179,20 +181,20 @@ jobs:
       - name: Install backend production dependencies
         shell: powershell
         run: |
-          cd C:\tv4all
+          cd C:\Projects\tv4all
           npm --prefix backend ci --omit=dev
 
       - name: Compile backend TypeScript
         shell: powershell
         run: |
-          cd C:\tv4all
+          cd C:\Projects\tv4all
           npm --prefix backend run build
 
       - name: Recycle IIS Application Pool (Zero-Downtime Reload)
         shell: powershell
         run: |
           # Touching web.config automatically triggers an instant iisnode reload
-          (Get-Item "C:\tv4all\backend\web.config").LastWriteTime = Get-Date
+          (Get-Item "C:\Projects\tv4all\backend\web.config").LastWriteTime = Get-Date
           Write-Host "Triggered IIS backend hot reload."
 
       - name: Health Verification
