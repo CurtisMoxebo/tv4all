@@ -158,3 +158,46 @@ jobs:
           name: frontend-dist
           path: frontend/dist/
           retention-days: 7
+
+  # =============================================================
+  # 5. Continuous Deployment: Deploy to Windows Server (IIS)
+  # =============================================================
+  deploy-iis:
+    name: "Deploy Backend to IIS Server"
+    needs: [ backend-tests, backend-build ]
+    runs-on: self-hosted
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    steps:
+      - name: Checkout latest main branch
+        shell: powershell
+        run: |
+          cd C:\tv4all
+          git fetch origin
+          git reset --hard origin/main
+
+      - name: Install backend production dependencies
+        shell: powershell
+        run: |
+          cd C:\tv4all
+          npm --prefix backend ci --omit=dev
+
+      - name: Compile backend TypeScript
+        shell: powershell
+        run: |
+          cd C:\tv4all
+          npm --prefix backend run build
+
+      - name: Recycle IIS Application Pool (Zero-Downtime Reload)
+        shell: powershell
+        run: |
+          # Touching web.config automatically triggers an instant iisnode reload
+          (Get-Item "C:\tv4all\backend\web.config").LastWriteTime = Get-Date
+          Write-Host "Triggered IIS backend hot reload."
+
+      - name: Health Verification
+        shell: powershell
+        run: |
+          Start-Sleep -Seconds 3
+          $health = Invoke-RestMethod -Uri "http://localhost:8001/api/health" -Method Get
+          Write-Host "IIS Backend Status: $($health.status)"
