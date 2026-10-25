@@ -163,8 +163,8 @@ jobs:
   # 5. Continuous Deployment: Deploy to Windows Server (IIS)
   # =============================================================
   deploy-iis:
-    name: "Deploy Backend to IIS Server"
-    needs: [ backend-tests, backend-build ]
+    name: "Deploy Backend & Frontend to IIS Server"
+    needs: [ backend-tests, backend-build, frontend-tests, frontend-build ]
     runs-on: self-hosted
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
 
@@ -178,19 +178,21 @@ jobs:
           git fetch origin
           git reset --hard origin/main
 
-      - name: Install backend dependencies
+      - name: Install dependencies & build backend
         shell: powershell
         run: |
           cd C:\Projects\tv4all
           npm --prefix backend ci
+          npm --prefix backend run build
 
-      - name: Compile backend TypeScript
+      - name: Install dependencies & build frontend
         shell: powershell
         run: |
           cd C:\Projects\tv4all
-          npm --prefix backend run build
+          npm --prefix frontend ci
+          npm --prefix frontend run build
 
-      - name: Recycle IIS Application Pool (Zero-Downtime Reload)
+      - name: Recycle IIS Backend Application Pool (Zero-Downtime Reload)
         shell: powershell
         run: |
           # Touching web.config automatically triggers an instant iisnode reload
