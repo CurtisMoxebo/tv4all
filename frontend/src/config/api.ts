@@ -25,5 +25,7 @@ export const API_ENDPOINTS = {
   GROUPS: `${API_BASE_URL}/groups`,
   STREAM: (channelId: string) => `${API_BASE_URL}/stream/${channelId}`,
   BROADCASTS: `${API_BASE_URL}/broadcasts`,
-  LOGS: `${API_BASE_URL}/logs`
+  LOGS: `${API_BASE_URL}/logs`,
+  EPG: (channelId: string, name?: string) =>
+    `${API_BASE_URL}/epg/${encodeURIComponent(channelId)}${name ? `?name=${encodeURIComponent(name)}` : ''}`
 };

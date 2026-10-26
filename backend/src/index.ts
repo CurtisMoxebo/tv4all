@@ -6,6 +6,7 @@ import channelRoutes from './routes/channelRoutes';
 import groupRoutes from './routes/groupRoutes';
 import streamRoutes from './routes/streamRoutes';
 import logRoutes from './routes/logRoutes';
+import epgRoutes from './routes/epgRoutes';
 import { requireAuth } from './middleware/authMiddleware';
 import { requestLogger } from './middleware/loggerMiddleware';
 import { broadcastManager } from './services/broadcast/BroadcastManager';
@@ -39,6 +40,7 @@ app.use('/api/channels', requireAuth, channelRoutes);
 app.use('/api/groups', requireAuth, groupRoutes);
 app.use('/api/stream', requireAuth, streamRoutes);
 app.use('/api/logs', requireAuth, logRoutes);
+app.use('/api/epg', requireAuth, epgRoutes);
 app.use('/api/broadcasts', requireAuth, (_req: Request, res: Response) => {
   res.json(broadcastManager.getActiveBroadcasts());
 });
@@ -55,7 +57,8 @@ app.get('/api', (_req: Request, res: Response) => {
       groups: '/api/groups',
       stream: '/api/stream/:channelId',
       broadcasts: '/api/broadcasts',
-      logs: '/api/logs'
+      logs: '/api/logs',
+      epg: '/api/epg/:channelId'
     }
   });
 });

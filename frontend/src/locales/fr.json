@@ -34,5 +34,15 @@
   },
   "footer": {
     "copyright": "Tous droits réservés."
+  },
+  "epg": {
+    "title": "Guide des programmes (EPG)",
+    "liveNow": "En direct",
+    "upcoming": "À suivre",
+    "noSchedule": "Aucune information de programme disponible pour cette chaîne.",
+    "loading": "Chargement du guide TV...",
+    "minsLeft": "min restantes",
+    "startsAt": "Débute à",
+    "refresh": "Actualiser le guide"
   }
 }

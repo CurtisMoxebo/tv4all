@@ -11,6 +11,7 @@ import { VideoPlayer } from '../components/VideoPlayer';
 import { ChannelCard } from '../components/ChannelCard';
 import { FilterPopover, SortOrder } from '../components/FilterPopover';
 import { Footer } from '../components/Footer';
+import { EPGGuide } from '../components/EPGGuide';
 
 export const HomePage: React.FC = () => {
   const { t } = useTranslation();
@@ -485,6 +486,11 @@ export const HomePage: React.FC = () => {
                   Select any channel from the list on the left to start watching
                 </p>
               </div>
+            )}
+
+            {/* EPG Program Guide */}
+            {selectedChannel && (
+              <EPGGuide channel={selectedChannel} token={token} />
             )}
           </div>
         </div>

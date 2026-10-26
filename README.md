@@ -6,7 +6,7 @@
 ![React](https://img.shields.io/badge/react-18.x-61dafb.svg)
 ![Vite](https://img.shields.io/badge/vite-6.x-646cff.svg)
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-4.x-38bdf8.svg)
-![Tests](https://img.shields.io/badge/tests-106%20passed-brightgreen.svg)
+![Tests](https://img.shields.io/badge/tests-118%20passed-brightgreen.svg)
 
 **TV4ALL** is a high-performance IPTV relay and web streaming platform. It solves the common limitation where IPTV providers permit only **one concurrent connection** per subscriber/stream URL. By acting as an intelligent intermediary broadcast proxy, `TV4ALL` opens a **single upstream connection** to the stream provider and broadcasts that live MPEG-TS / HLS stream to **multiple downstream web viewers simultaneously**.
 
@@ -46,7 +46,8 @@
 - **Multi-Role Authentication**: 12-hour signed JWT sessions with granular role checks (`admin` vs. standard `viewer`).
 - **Tri-lingual Internationalization**: English, French, and Spanish with live runtime switching and `localStorage` persistence.
 - **Search & Categorization**: Real-time query highlighting in channel names, group filter dropdown, and sorting (Default, A-Z, Z-A).
-- **Comprehensive Test Suite**: 106 automated regression tests (67 backend, 39 frontend) validating all core business logic and API contracts.
+- **Electronic Program Guide (EPG)**: Displays live show title, category, elapsed time progress bar, and upcoming scheduled programs directly below the video player.
+- **Comprehensive Test Suite**: 118 automated regression tests (76 backend, 42 frontend) validating all core business logic and API contracts.
 
 ---
 
@@ -115,9 +116,10 @@ tv4all/
 │   │   │   └── express.d.ts      # Express Request type extensions
 │   │   └── utils/
 │   │       └── m3uParser.ts      # Parser for #EXTM3U and attributes
-│   ├── tests/                    # 67 Backend Regression Tests (node:test)
+│   ├── tests/                    # 76 Backend Regression Tests (node:test)
 │   │   ├── auth.test.ts
 │   │   ├── channels.test.ts
+│   │   ├── epg.test.ts
 │   │   ├── healthAndStream.test.ts
 │   │   ├── helpers.ts
 │   │   ├── logger.test.ts
@@ -135,7 +137,8 @@ tv4all/
 │   │   │   ├── FilterPopover.tsx # Sort order & category modal
 │   │   │   ├── LanguageSelector.tsx # EN/FR/ES dropdown selector
 │   │   │   ├── Logo.tsx          # Brand display component
-│   │   │   └── VideoPlayer.tsx   # mpegts.js & hls.js video player
+│   │   │   ├── VideoPlayer.tsx   # mpegts.js & hls.js video player
+│   │   │   └── EPGGuide.tsx      # Electronic Program Guide (Live Now & Up Next)
 │   │   ├── config/
 │   │   │   └── api.ts            # API endpoint configuration
 │   │   ├── context/
@@ -148,7 +151,7 @@ tv4all/
 │   │   │   ├── HomePage.tsx      # Main streaming UI & drawer
 │   │   │   ├── LoginPage.tsx     # Authentication form
 │   │   │   └── ManageChannelsPage.tsx # Admin channel CRUD & M3U manager
-│   │   ├── test/                 # 39 Frontend Regression Tests (Vitest)
+│   │   ├── test/                 # 42 Frontend Regression Tests (Vitest)
 │   │   │   ├── components/
 │   │   │   ├── context/
 │   │   │   ├── pages/
@@ -307,6 +310,8 @@ All protected endpoints require authentication via:
 | `GET` | `/api/broadcasts` | Returns snapshot of all running stream instances |
 | `GET` | `/api/logs` | Returns latest entries from today's log file (`?limit=100`) |
 | `GET` | `/api/logs/raw` | Returns raw `text/plain` content of today's log file |
+| `GET` | `/api/epg/:channelId` | Returns current program, progress percentage, and upcoming schedule |
+| `POST` | `/api/epg/upload` | Uploads raw XMLTV guide data (Admin only) |
 
 ---
 
@@ -390,14 +395,14 @@ The backend records all HTTP traffic and operational events to rotating daily lo
 
 ## Automated Regression Tests
 
-The project includes **106 automated regression tests** with 100% pass rates:
+The project includes **118 automated regression tests** with 100% pass rates:
 
 ### Run All Tests (Root)
 ```bash
 npm test
 ```
 
-### Backend Tests (67 Tests)
+### Backend Tests (76 Tests)
 Built with Node's native test runner (`node:test`), `supertest`, and `tsx`:
 ```bash
 npm run test:backend
@@ -405,16 +410,16 @@ npm run test:backend
 npm --prefix backend test
 ```
 - Safe test execution: channel tests run against temporary playlist files, never modifying the live `index.m3u8`.
-- Covers M3U parsing, JWT authorization, channel CRUD, daily logging, and stream health.
+- Covers M3U parsing, JWT authorization, channel CRUD, daily logging, stream health, and XMLTV EPG scheduling.
 
-### Frontend Tests (39 Tests)
+### Frontend Tests (42 Tests)
 Built with [Vitest](https://vitest.dev/), [React Testing Library](https://testing-library.com/), and `jsdom`:
 ```bash
 npm run test:frontend
 # or
 npm --prefix frontend test
 ```
-- Covers brand logo rendering, channel cards, language switcher, filter popover, video player, footer copyright, auth context, login, and admin pages.
+- Covers brand logo rendering, channel cards, language switcher, filter popover, video player, EPG guide, footer copyright, auth context, login, and admin pages.
 
 ---
 
@@ -424,9 +429,9 @@ Continuous Integration and Continuous Delivery are configured in [`.github/workf
 
 - **Triggers**: On every `push` or `pull_request` to `main` or `master`, or via manual trigger.
 - **Concurrency**: Automatically cancels outdated queued builds when new commits are pushed.
-- **Backend Tests**: Runs all 67 backend regression tests (`node:test` + `supertest` + `tsx`).
+- **Backend Tests**: Runs all 76 backend regression tests (`node:test` + `supertest` + `tsx`).
 - **Backend Build**: Type-checks and compiles TypeScript to `backend/dist` (`tsc`).
-- **Frontend Tests**: Runs all 39 frontend regression tests (`vitest` + React Testing Library + `jsdom`).
+- **Frontend Tests**: Runs all 42 frontend regression tests (`vitest` + React Testing Library + `jsdom`).
 - **Frontend Build**: Type-checks and bundles production assets to `frontend/dist` (`vite build`).
 
 ---
