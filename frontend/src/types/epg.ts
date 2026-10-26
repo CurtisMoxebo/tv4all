@@ -4,9 +4,9 @@ export interface EPGProgram {
   title: string;
   desc?: string;
   category?: string;
-  start: string;
-  stop: string;
-  progress?: number;
+  start: string; // ISO 8601 string
+  stop: string;  // ISO 8601 string
+  progress?: number; // 0 - 100 percentage
   durationMinutes?: number;
 }
 
@@ -14,8 +14,8 @@ export interface ChannelEPGResponse {
   channelId: string;
   channelName?: string;
   hasEpg: boolean;
+  viewersCount?: number;
   current: EPGProgram | null;
   upcoming: EPGProgram[];
   updatedAt: string;
 }
-

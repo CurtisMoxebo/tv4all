@@ -154,6 +154,21 @@ export const EPGGuide: React.FC<EPGGuideProps> = ({ channel, token }) => {
                 <span>{t('epg.liveNow')}</span>
               </span>
 
+              {typeof epgData.viewersCount === 'number' && epgData.viewersCount > 0 && (
+                <span
+                  data-testid="epg-viewers-count"
+                  className="flex items-center space-x-1 text-[10px] font-semibold text-emerald-400 px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/60"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>
+                    {epgData.viewersCount}{' '}
+                    {epgData.viewersCount === 1
+                      ? t('player.viewer', 'viewer')
+                      : t('player.viewers', 'viewers')}
+                  </span>
+                </span>
+              )}
+
               {epgData.current.category && (
                 <span className="text-[10px] font-semibold text-slate-300 px-2 py-0.5 rounded bg-[#1e2c47]/80">
                   {epgData.current.category}

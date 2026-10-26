@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import mpegts from 'mpegts.js';
 import Hls from 'hls.js';
 import { Channel } from '../types/channel';
@@ -11,10 +12,51 @@ interface VideoPlayerProps {
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [viewersCount, setViewersCount] = useState<number>(0);
+
+  // Poll live viewer count from backend for the currently selected channel
+  useEffect(() => {
+    if (!channel || !token) {
+      setViewersCount(0);
+      return;
+    }
+
+    // Default to at least 1 since this client is watching
+    setViewersCount(1);
+
+    let isMounted = true;
+    const fetchViewerCount = async () => {
+      try {
+        const res = await fetch(API_ENDPOINTS.STREAM_STATUS(channel.id), {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (res.ok && isMounted) {
+          const data = await res.json();
+          if (typeof data.viewersCount === 'number') {
+            setViewersCount(Math.max(1, data.viewersCount));
+          }
+        }
+      } catch {
+        // Keep current count on transient network issue
+      }
+    };
+
+    const initialTimer = setTimeout(fetchViewerCount, 1500);
+    const interval = setInterval(fetchViewerCount, 4000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, [channel, token]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -83,27 +125,34 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
         mpegtsPlayer.attachMediaElement(video);
         mpegtsPlayer.load();
 
-        mpegtsPlayer.on(mpegts.Events.ERROR, (errType: any, errDetail: any, errInfo: any) => {
-          console.warn('[mpegts] Stream error:', errType, errDetail, errInfo);
-          if (errType === mpegts.ErrorTypes.NETWORK_ERROR) {
-            setError('Stream network connection lost. The upstream broadcast might be offline.');
-            setIsLoading(false);
-          }
+        mpegtsPlayer.on(mpegts.Events.ERROR, (errorType: string, errorDetail: string) => {
+          console.error('[mpegts.js error]', errorType, errorDetail);
+          setError(`Stream error (${errorType}): ${errorDetail}`);
+          setIsLoading(false);
+        });
+
+        mpegtsPlayer.on(mpegts.Events.LOADING_COMPLETE, () => {
+          console.log('[mpegts] Loading complete');
+          setIsLoading(false);
+        });
+
+        mpegtsPlayer.on(mpegts.Events.MEDIA_INFO, () => {
+          setIsLoading(false);
+          startPlayback();
         });
 
         startPlayback();
-      } catch (err) {
-        console.error('[mpegts] Failed to initialize player:', err);
-        setError('Failed to initialize stream player.');
+      } catch (e: any) {
+        console.error('Failed to initialize mpegts player:', e);
+        setError('Failed to initialize stream player');
         setIsLoading(false);
       }
-    } else if (Hls.isSupported()) {
+    } else if (Hls.isSupported() && channel.url?.includes('.m3u8')) {
       hlsPlayer = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
         backBufferLength: 30
       });
-
       hlsPlayer.loadSource(streamUrl);
       hlsPlayer.attachMedia(video);
 
@@ -114,87 +163,78 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
 
       hlsPlayer.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
-          setError('Failed to play stream. Upstream broadcast may be offline.');
+          console.error('Fatal HLS error:', data);
+          setError(`HLS error: ${data.details}`);
           setIsLoading(false);
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              hlsPlayer?.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hlsPlayer?.recoverMediaError();
+              break;
+            default:
+              hlsPlayer?.destroy();
+              break;
+          }
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native Apple HLS (Safari iOS/macOS)
+      // Native Safari HLS
       video.src = streamUrl;
       video.addEventListener('loadedmetadata', () => {
         setIsLoading(false);
         startPlayback();
       });
     } else {
-      // Direct video stream
+      // Fallback for direct browser support
       video.src = streamUrl;
-      video.load();
       startPlayback();
     }
 
-    let waitingTimer: ReturnType<typeof setTimeout> | null = null;
+    let waitingTimer: any = null;
 
     const handlePlaying = () => {
       if (waitingTimer) {
         clearTimeout(waitingTimer);
         waitingTimer = null;
       }
-      video.muted = false;
       setIsLoading(false);
       setError(null);
+      video.muted = false;
+      video.defaultMuted = false;
+      video.volume = 1.0;
     };
 
     const handleCanPlay = () => {
-      if (waitingTimer) {
-        clearTimeout(waitingTimer);
-        waitingTimer = null;
-      }
       setIsLoading(false);
-      setError(null);
-      if (video.paused) {
-        video.muted = false;
-        video.volume = 1.0;
-        const p = mpegtsPlayer ? mpegtsPlayer.play() : video.play();
-        if (p !== undefined && typeof p?.catch === 'function') {
-          p.catch(() => {});
-        }
-      }
+      startPlayback();
     };
 
     const handleLoadedData = () => {
-      if (waitingTimer) {
-        clearTimeout(waitingTimer);
-        waitingTimer = null;
-      }
-      video.muted = false;
       setIsLoading(false);
-      setError(null);
     };
 
     const handleWaiting = () => {
-      // Debounce loading overlay to avoid flickering on minor micro-buffers
-      if (!waitingTimer) {
-        waitingTimer = setTimeout(() => {
+      if (waitingTimer) clearTimeout(waitingTimer);
+      waitingTimer = setTimeout(() => {
+        if (video.paused || video.readyState < 3) {
           setIsLoading(true);
-        }, 700);
-      }
+        }
+      }, 400);
     };
 
-    const handleVideoError = (e: Event) => {
-      if (waitingTimer) {
-        clearTimeout(waitingTimer);
-        waitingTimer = null;
-      }
-      const v = e.target as HTMLVideoElement;
-      if (!v || !v.error) return;
-      // Ignore initial reset when src is empty or not yet attached
-      if (!v.currentSrc && !v.src) return;
-      // Ignore MEDIA_ERR_ABORTED (code 1) which fires when user switches channels
-      if (v.error.code === MediaError.MEDIA_ERR_ABORTED) return;
-
-      console.error('[VideoPlayer] Media element error:', v.error.code, v.error.message);
+    const handleVideoError = () => {
       setIsLoading(false);
-      setError('Unable to load channel stream.');
+      if (video.error) {
+        const errorCodes: Record<number, string> = {
+          1: 'Playback aborted by user',
+          2: 'Network error while downloading stream',
+          3: 'Media decoding error',
+          4: 'Stream format not supported or unreachable'
+        };
+        setError(errorCodes[video.error.code] || 'An unknown video error occurred');
+      }
     };
 
     // Any user click on the page ensures unmuted playback
@@ -308,14 +348,47 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, token }) => {
 
       {/* Channel info banner on top left when active */}
       {channel && (
-        <div className="absolute top-3 left-3 flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-black/70 backdrop-blur-md border border-slate-700/60 pointer-events-none">
+        <div className="absolute top-3 left-3 flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-black/75 backdrop-blur-md border border-slate-700/60 pointer-events-none z-10 shadow-lg">
           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
           <span className="text-xs font-bold text-white tracking-wide uppercase">
-            LIVE
+            {t('player.live', 'LIVE')}
           </span>
           <span className="text-xs text-slate-400 font-medium">|</span>
           <span className="text-xs font-semibold text-slate-200">
             {channel.name}
+          </span>
+        </div>
+      )}
+
+      {/* Live Viewers counter on top right when active */}
+      {channel && (
+        <div
+          data-testid="live-viewers-badge"
+          className="absolute top-3 right-3 flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-black/75 backdrop-blur-md border border-slate-700/60 pointer-events-none z-10 shadow-lg text-xs font-semibold text-slate-200 select-none transition-opacity duration-300"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <svg
+            className="w-3.5 h-3.5 text-slate-300"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            />
+          </svg>
+          <span className="tracking-wide">
+            {viewersCount}{' '}
+            <span className="text-slate-400 font-normal">
+              {viewersCount === 1 ? t('player.viewer', 'viewer') : t('player.viewers', 'viewers')}
+            </span>
           </span>
         </div>
       )}

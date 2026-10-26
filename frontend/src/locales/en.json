@@ -35,6 +35,12 @@
   "footer": {
     "copyright": "All rights reserved."
   },
+  "player": {
+    "live": "LIVE",
+    "viewer": "viewer",
+    "viewers": "viewers",
+    "watching": "watching"
+  },
   "epg": {
     "title": "Program Guide (EPG)",
     "liveNow": "Live Now",

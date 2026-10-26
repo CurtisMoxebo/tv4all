@@ -27,4 +27,21 @@ describe('VideoPlayer Component Regression Tests', () => {
     expect(screen.getByText('LIVE')).toBeInTheDocument();
     expect(screen.getByText('France 2 HD')).toBeInTheDocument();
   });
+
+  it('renders live viewers count badge on top right when channel is selected', () => {
+    const channel: Channel = {
+      id: 'France2.fr',
+      name: 'France 2 HD',
+      logo: '',
+      group: 'General'
+    };
+
+    renderWithProviders(
+      <VideoPlayer channel={channel} token="test-token" />
+    );
+
+    const badge = screen.getByTestId('live-viewers-badge');
+    expect(badge).toBeInTheDocument();
+    expect(badge.textContent).toMatch(/1\s+viewer/i);
+  });
 });

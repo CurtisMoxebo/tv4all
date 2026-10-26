@@ -3,24 +3,24 @@
     "logout": "Déconnexion"
   },
   "admin": {
-    "manageTitle": "Gestion des chaînes",
-    "manageSubtitle": "Ajouter et supprimer des chaînes du fichier playlist M3U",
+    "manageTitle": "Gérer les chaînes",
+    "manageSubtitle": "Ajouter et supprimer des chaînes du fichier de playlist M3U",
     "addChannel": "Ajouter une chaîne",
     "deleteChannel": "Supprimer la chaîne",
     "backToHome": "Retour au lecteur",
     "accessDenied": "Accès administrateur requis",
     "accessDeniedDesc": "Vous devez être connecté en tant qu'administrateur pour gérer les chaînes.",
-    "addModeForm": "Champs du formulaire",
-    "addModeM3U": "Lignes M3U brutes (2 lignes)",
-    "m3uLine1": "Ligne 1 : Directive #EXTINF",
-    "m3uLine2": "Ligne 2 : URL du flux"
+    "addModeForm": "Champs de formulaire",
+    "addModeM3U": "M3U brut (2 lignes)",
+    "m3uLine1": "Ligne 1: Directive #EXTINF",
+    "m3uLine2": "Ligne 2: URL du flux"
   },
   "auth": {
-    "username": "Nom d'utilisateur",
+    "username": "Identifiant",
     "password": "Mot de passe",
-    "loginButton": "Se connecter",
+    "loginButton": "Connexion",
     "signingIn": "Connexion en cours...",
-    "invalidCredentials": "Nom d'utilisateur ou mot de passe invalide"
+    "invalidCredentials": "Identifiant ou mot de passe incorrect"
   },
   "channels": {
     "title": "Chaînes disponibles",
@@ -34,6 +34,12 @@
   },
   "footer": {
     "copyright": "Tous droits réservés."
+  },
+  "player": {
+    "live": "EN DIRECT",
+    "viewer": "spectateur",
+    "viewers": "spectateurs",
+    "watching": "en direct"
   },
   "epg": {
     "title": "Guide des programmes (EPG)",

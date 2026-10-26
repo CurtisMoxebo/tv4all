@@ -3,17 +3,17 @@
     "logout": "Cerrar sesión"
   },
   "admin": {
-    "manageTitle": "Gestión de canales",
+    "manageTitle": "Administrar canales",
     "manageSubtitle": "Agregar y eliminar canales del archivo de lista M3U",
-    "addChannel": "Agregar canal",
+    "addChannel": "Agregar nuevo canal",
     "deleteChannel": "Eliminar canal",
     "backToHome": "Volver al reproductor",
     "accessDenied": "Acceso de administrador requerido",
-    "accessDeniedDesc": "Debes iniciar sesión como administrador para gestionar canales.",
-    "addModeForm": "Campos del formulario",
-    "addModeM3U": "Líneas M3U sin procesar (2 líneas)",
+    "accessDeniedDesc": "Debe iniciar sesión como administrador para gestionar canales.",
+    "addModeForm": "Campos de formulario",
+    "addModeM3U": "M3U sin procesar (2 líneas)",
     "m3uLine1": "Línea 1: Directiva #EXTINF",
-    "m3uLine2": "Línea 2: URL de transmisión"
+    "m3uLine2": "Línea 2: URL del flujo"
   },
   "auth": {
     "username": "Usuario",
@@ -34,6 +34,12 @@
   },
   "footer": {
     "copyright": "Todos los derechos reservados."
+  },
+  "player": {
+    "live": "EN VIVO",
+    "viewer": "espectador",
+    "viewers": "espectadores",
+    "watching": "viendo"
   },
   "epg": {
     "title": "Guía de programas (EPG)",

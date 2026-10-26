@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
   CHANNEL_DELETE: (channelId: string) => `${API_BASE_URL}/channels/${encodeURIComponent(channelId)}`,
   GROUPS: `${API_BASE_URL}/groups`,
   STREAM: (channelId: string) => `${API_BASE_URL}/stream/${channelId}`,
+  STREAM_STATUS: (channelId: string) => `${API_BASE_URL}/stream/${encodeURIComponent(channelId)}/status`,
   BROADCASTS: `${API_BASE_URL}/broadcasts`,
   LOGS: `${API_BASE_URL}/logs`,
   EPG: (channelId: string, name?: string) =>
