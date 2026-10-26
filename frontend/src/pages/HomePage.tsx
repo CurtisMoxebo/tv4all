@@ -455,39 +455,6 @@ export const HomePage: React.FC = () => {
           <div className="lg:col-span-7 xl:col-span-8 lg:sticky lg:top-22 space-y-3">
             <VideoPlayer channel={selectedChannel} token={token} />
 
-            {/* Now Playing info bar */}
-            {selectedChannel ? (
-              <div className="p-4 rounded-xl bg-[#0d1527] border border-[#1e2c47] flex items-center justify-between shadow-lg">
-                <div className="flex items-center space-x-3 min-w-0">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
-                  <div className="truncate">
-                    <h2 className="text-base font-bold text-white truncate">
-                      {selectedChannel.name}
-                    </h2>
-                    <p className="text-xs text-slate-400 truncate">
-                      {selectedChannel.group}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedChannel(null);
-                    navigate('/');
-                  }}
-                  className="px-3 py-1 text-xs text-slate-400 hover:text-white bg-[#151f32] border border-[#263756] rounded-lg transition-colors cursor-pointer shrink-0"
-                >
-                  Close
-                </button>
-              </div>
-            ) : (
-              <div className="p-3.5 rounded-xl bg-[#0d1527]/50 border border-[#1e2c47]/60 text-center">
-                <p className="text-xs text-slate-400">
-                  Select any channel from the list on the left to start watching
-                </p>
-              </div>
-            )}
-
             {/* EPG Program Guide */}
             {selectedChannel && (
               <EPGGuide channel={selectedChannel} token={token} />
