@@ -159,4 +159,114 @@ describe('ManageChannelsPage Regression Tests', () => {
       expect(screen.getByText(/Channel "France 2 HD" was removed from the playlist/i)).toBeInTheDocument();
     });
   });
+
+  it('submits new channel via structured form and refreshes list', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(async (_url: any, options?: any) => {
+      if (options?.method === 'POST') {
+        return {
+          ok: true,
+          status: 201,
+          json: async () => ({
+            message: 'Channel added successfully',
+            channel: { id: 'tf1-hd', name: 'TF1 HD', group: 'General', logo: '', url: 'https://stream.example.com/tf1.m3u8' }
+          })
+        } as Response;
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => sampleChannels
+      } as Response;
+    });
+
+    renderWithProviders(<ManageChannelsPage />, {
+      auth: { isAuthenticated: true, isAdmin: true }
+    });
+
+    // Open add channel form
+    fireEvent.click(screen.getByRole('button', { name: /Add New Channel/i }));
+
+    // Fill form fields
+    const nameInput = screen.getByPlaceholderText(/e\.g\. TF1, BFM TV, France 24/i);
+    const urlInput = screen.getByPlaceholderText(/https:\/\/example\.com\/live\/stream\.m3u8/i);
+
+    fireEvent.change(nameInput, { target: { value: 'TF1 HD' } });
+    fireEvent.change(urlInput, { target: { value: 'https://stream.example.com/tf1.m3u8' } });
+
+    // Submit
+    const saveBtn = screen.getByRole('button', { name: /Add to Playlist/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining('/channels'),
+        expect.objectContaining({ method: 'POST' })
+      );
+      expect(screen.getByText(/Channel "TF1 HD" added successfully!/i)).toBeInTheDocument();
+    });
+  });
+
+  it('submits new channel via raw 2-line M3U and shows success message', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(async (_url: any, options?: any) => {
+      if (options?.method === 'POST') {
+        return {
+          ok: true,
+          status: 201,
+          json: async () => ({
+            message: 'Channel added successfully',
+            channel: { id: 'M6.fr', name: 'M6 HD', group: 'Entertainment', logo: '', url: 'https://stream.example.com/m6.m3u8' }
+          })
+        } as Response;
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => sampleChannels
+      } as Response;
+    });
+
+    renderWithProviders(<ManageChannelsPage />, {
+      auth: { isAuthenticated: true, isAdmin: true }
+    });
+
+    // Open add channel form and switch to raw M3U mode
+    fireEvent.click(screen.getByRole('button', { name: /Add New Channel/i }));
+    fireEvent.click(screen.getByText('Raw M3U (2 Lines)'));
+
+    // Fill raw inputs
+    const extinfInput = screen.getByPlaceholderText(/#EXTINF:-1 tvg-name=/i);
+    const streamUrlInput = screen.getByPlaceholderText(/https:\/\/example\.com\/stream\/index\.m3u8/i);
+
+    fireEvent.change(extinfInput, { target: { value: '#EXTINF:-1 tvg-id="M6.fr" tvg-name="M6 HD",M6 HD' } });
+    fireEvent.change(streamUrlInput, { target: { value: 'https://stream.example.com/m6.m3u8' } });
+
+    // Submit
+    const saveBtn = screen.getByRole('button', { name: /Append M3U Lines/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining('/channels/raw'),
+        expect.objectContaining({ method: 'POST' })
+      );
+      expect(screen.getByText(/Channel "M6 HD" added successfully from M3U lines!/i)).toBeInTheDocument();
+    });
+  });
+
+  it('filters channels in management table by search query', async () => {
+    renderWithProviders(<ManageChannelsPage />, {
+      auth: { isAuthenticated: true, isAdmin: true }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('France 2 HD')).toBeInTheDocument();
+      expect(screen.getByText('France 24')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText(/Search by name, ID, or category/i);
+    fireEvent.change(searchInput, { target: { value: 'France 24' } });
+
+    expect(screen.getByText('France 24')).toBeInTheDocument();
+    expect(screen.queryByText('France 2 HD')).not.toBeInTheDocument();
+  });
 });

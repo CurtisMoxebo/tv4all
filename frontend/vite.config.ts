@@ -30,6 +30,8 @@ export default defineConfig(({ mode }) => {
           'node_modules/**',
           'dist/**',
           'src/test/**',
+          'src/locales/**',
+          'src/types/**',
           '**/*.d.ts',
           'vite.config.ts'
         ]

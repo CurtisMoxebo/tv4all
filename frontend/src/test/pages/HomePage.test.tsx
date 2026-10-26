@@ -133,4 +133,25 @@ describe('HomePage Regression Tests', () => {
     fireEvent.click(closeBtn);
     expect(aside).toHaveClass('-translate-x-full');
   });
+
+  it('clears search input when clear button is clicked', async () => {
+    renderWithProviders(<HomePage />, {
+      auth: { isAuthenticated: true, isAdmin: false }
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('France 2 HD').length).toBeGreaterThanOrEqual(1);
+    });
+
+    const searchInput = screen.getAllByPlaceholderText(/Search channels by name or ID/i)[0] as HTMLInputElement;
+    fireEvent.change(searchInput, { target: { value: 'France' } });
+    expect(searchInput.value).toBe('France');
+
+    // Clear button should be visible
+    const clearBtn = screen.getByLabelText('Clear search');
+    expect(clearBtn).toBeInTheDocument();
+
+    fireEvent.click(clearBtn);
+    expect(searchInput.value).toBe('');
+  });
 });
