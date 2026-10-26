@@ -100,28 +100,29 @@ export class EPGService {
 
   /**
    * Generate realistic time-slotted fallback programs when no XMLTV data is loaded.
+   * Does NOT append or prefix channel name to the program titles.
    */
   private generateFallbackSchedule(channelId: string, channelName?: string, now = new Date()): EPGProgram[] {
     const programs: EPGProgram[] = [];
-    const displayName = channelName || channelId;
+    const salt = (channelName || channelId).length;
     
     // Create slots aligned to 30 or 60-minute blocks around now
     const baseHour = new Date(now);
     baseHour.setMinutes(0, 0, 0);
 
     const slotThemes = [
-      { title: `${displayName} - Live Edition`, desc: `Live rolling coverage, news reports, and interactive analysis on ${displayName}.`, category: 'Live' },
-      { title: `${displayName} - Journal & Actualités`, desc: `Comprehensive daily briefing, world headlines, and investigative reporting.`, category: 'News' },
-      { title: `${displayName} - Grand Format & Débat`, desc: `In-depth discussions with featured guests, experts, and documentary perspectives.`, category: 'Magazine' },
-      { title: `${displayName} - Soirée Spéciale`, desc: `Evening prime-time broadcast featuring special broadcasts and entertainment.`, category: 'Special' },
-      { title: `${displayName} - Nuit Info & Rediffusion`, desc: `Nighttime recap, cultural highlights, and international stream relay.`, category: 'Information' }
+      { title: 'Live Edition', desc: 'Live rolling coverage, news reports, and interactive analysis.', category: 'Live' },
+      { title: 'Journal & Actualités', desc: 'Comprehensive daily briefing, world headlines, and investigative reporting.', category: 'News' },
+      { title: 'Grand Format & Débat', desc: 'In-depth discussions with featured guests, experts, and documentary perspectives.', category: 'Magazine' },
+      { title: 'Soirée Spéciale', desc: 'Evening prime-time broadcast featuring special broadcasts and entertainment.', category: 'Special' },
+      { title: 'Nuit Info & Rediffusion', desc: 'Nighttime recap, cultural highlights, and international stream relay.', category: 'Information' }
     ];
 
     // Generate 6 consecutive 1-hour slots starting from 1 hour before now
     for (let i = -1; i < 5; i++) {
       const start = new Date(baseHour.getTime() + i * 3600 * 1000);
       const stop = new Date(start.getTime() + 3600 * 1000);
-      const themeIndex = Math.abs((start.getHours() + displayName.length) % slotThemes.length);
+      const themeIndex = Math.abs((start.getHours() + salt) % slotThemes.length);
       const theme = slotThemes[themeIndex];
 
       programs.push({
@@ -205,4 +206,3 @@ export class EPGService {
 }
 
 export const epgService = new EPGService();
-

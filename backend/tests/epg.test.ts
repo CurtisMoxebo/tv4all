@@ -68,14 +68,18 @@ describe('EPG Service & Routes Regression Tests', () => {
       assert.equal(epg.upcoming[0].title, 'Cinéma: Soirée Européenne');
     });
 
-    it('should generate fallback schedule when channel is not in XMLTV', () => {
+    it('should generate fallback schedule when channel is not in XMLTV without appending channel name', () => {
       const refTime = new Date('2026-10-26T14:15:00.000Z');
-      const epg = epgService.getChannelEPG('UnknownChannel.fr', 'Unknown TV', refTime);
+      const channelName = 'Unknown TV';
+      const epg = epgService.getChannelEPG('UnknownChannel.fr', channelName, refTime);
 
       assert.equal(epg.hasEpg, false);
       assert.ok(epg.current);
-      assert.ok(epg.current.title.includes('Unknown TV'));
+      // Ensure channel name is NOT prepended or appended to program title
+      assert.ok(!epg.current.title.includes(channelName));
+      assert.ok(epg.current.title.length > 0);
       assert.ok(epg.upcoming.length > 0);
+      assert.ok(epg.upcoming.every(p => !p.title.includes(channelName)));
       assert.equal(epg.upcoming[0].durationMinutes, 60);
     });
   });
@@ -106,15 +110,25 @@ describe('EPG Service & Routes Regression Tests', () => {
       assert.equal(res.status, 403);
     });
 
-    it('POST /api/epg/upload should accept valid XMLTV from admin user', async () => {
+    it('POST /api/epg/upload should accept valid XMLTV payload from admin', async () => {
       const res = await request(app)
         .post('/api/epg/upload')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ xml: SAMPLE_XMLTV });
 
       assert.equal(res.status, 200);
-      assert.ok(res.body.message.includes('loaded 3 programs'));
+      assert.equal(res.body.success, true);
+      assert.equal(res.body.programsLoaded, 3);
+      assert.equal(res.body.channelsCount, 1);
+    });
+
+    it('POST /api/epg/upload should reject empty or invalid payload with 400', async () => {
+      const res = await request(app)
+        .post('/api/epg/upload')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({});
+
+      assert.equal(res.status, 400);
     });
   });
 });
-

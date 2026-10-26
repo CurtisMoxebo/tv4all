@@ -102,9 +102,6 @@ export const EPGGuide: React.FC<EPGGuideProps> = ({ channel, token }) => {
           <h3 className="text-sm font-bold text-white tracking-wide">
             {t('epg.title')}
           </h3>
-          <span className="text-[11px] text-slate-400 px-2 py-0.5 rounded bg-[#151f32] border border-[#263756]">
-            {channel.name}
-          </span>
         </div>
 
         <button
@@ -258,4 +255,3 @@ export const EPGGuide: React.FC<EPGGuideProps> = ({ channel, token }) => {
 };
 
 export default EPGGuide;
-
