@@ -217,7 +217,7 @@ export const EPGGuide: React.FC<EPGGuideProps> = ({ channel, token }) => {
       )}
 
       {/* Upcoming Schedule */}
-      {epgData && epgData.upcoming.length > 0 && (
+      {epgData?.upcoming && epgData.upcoming.length > 0 && (
         <div className="space-y-2 pt-1">
           <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
             <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

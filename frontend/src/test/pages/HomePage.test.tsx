@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import { HomePage } from '../../pages/HomePage';
 import { renderWithProviders } from '../test-utils';
 
@@ -70,5 +70,21 @@ describe('HomePage Regression Tests', () => {
       expect(screen.getAllByText('France 2 HD').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('France 3').length).toBeGreaterThanOrEqual(1);
     });
+  });
+
+  it('updates document.title with app name and channel name when channel is selected', async () => {
+    renderWithProviders(<HomePage />, {
+      auth: { isAuthenticated: true, isAdmin: false }
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('France 2 HD').length).toBeGreaterThanOrEqual(1);
+    });
+
+    // Select the channel
+    const channelCard = screen.getAllByText('France 2 HD')[0];
+    fireEvent.click(channelCard);
+
+    expect(document.title).toBe('TV4ALL - France 2 HD');
   });
 });

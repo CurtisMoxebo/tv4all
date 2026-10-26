@@ -159,6 +159,19 @@ export const HomePage: React.FC = () => {
     }
   }, [channelId, channels]);
 
+  // Update browser page title with app name and channel name when a channel is selected
+  useEffect(() => {
+    if (selectedChannel) {
+      document.title = `TV4ALL - ${selectedChannel.name}`;
+    } else {
+      document.title = 'TV4ALL - IPTV Streaming Relay';
+    }
+
+    return () => {
+      document.title = 'TV4ALL - IPTV Streaming Relay';
+    };
+  }, [selectedChannel]);
+
   const handleSelectChannel = (channel: Channel) => {
     setSelectedChannel(channel);
     setIsDrawerOpen(false); // Close drawer on mobile upon selection
