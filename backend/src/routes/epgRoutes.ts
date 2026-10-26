@@ -35,10 +35,11 @@ router.post('/upload', requireAdmin, (req: Request, res: Response) => {
 
   const count = epgService.loadXmltv(xmlContent);
   res.json({
+    success: true,
     message: `Successfully loaded ${count} programs into EPG cache`,
+    programsLoaded: count,
     channelsCount: epgService.getChannelCount()
   });
 });
 
 export default router;
-
