@@ -8,10 +8,7 @@ export interface TokenPayload {
   role: 'admin' | 'user';
 }
 
-export interface AuthenticatedUser {
-  username: string;
-  role: 'admin' | 'user';
-}
+export type AuthenticatedUser = TokenPayload;
 
 export class AuthService {
   private get authUsername(): string {

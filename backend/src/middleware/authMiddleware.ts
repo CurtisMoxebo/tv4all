@@ -33,7 +33,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     const decoded = authService.verifyToken(token);
     req.user = decoded;
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({
       error: 'Unauthorized',
       message: 'Invalid or expired authentication token'

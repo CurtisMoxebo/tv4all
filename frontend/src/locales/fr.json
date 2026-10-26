@@ -38,17 +38,14 @@
   "player": {
     "live": "EN DIRECT",
     "viewer": "spectateur",
-    "viewers": "spectateurs",
-    "watching": "en direct"
+    "viewers": "spectateurs"
   },
   "epg": {
     "title": "Guide des programmes (EPG)",
     "liveNow": "En direct",
     "upcoming": "À suivre",
     "noSchedule": "Aucune information de programme disponible pour cette chaîne.",
-    "loading": "Chargement du guide TV...",
     "minsLeft": "min restantes",
-    "startsAt": "Débute à",
     "refresh": "Actualiser le guide"
   }
 }

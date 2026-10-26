@@ -20,8 +20,7 @@
     "react-dom": "^18.3.1",
     "react-i18next": "^17.1.5",
     "react-router-dom": "^7.18.4",
-    "tailwindcss": "^4.3.3",
-    "tv4all": "file:.."
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",

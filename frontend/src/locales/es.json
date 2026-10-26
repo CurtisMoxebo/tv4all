@@ -38,17 +38,14 @@
   "player": {
     "live": "EN VIVO",
     "viewer": "espectador",
-    "viewers": "espectadores",
-    "watching": "viendo"
+    "viewers": "espectadores"
   },
   "epg": {
     "title": "Guía de programas (EPG)",
     "liveNow": "En vivo ahora",
     "upcoming": "A continuación",
     "noSchedule": "No hay información de programación disponible para este canal.",
-    "loading": "Cargando guía de televisión...",
     "minsLeft": "mins restantes",
-    "startsAt": "Comienza a las",
     "refresh": "Actualizar guía"
   }
 }

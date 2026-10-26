@@ -38,17 +38,14 @@
   "player": {
     "live": "LIVE",
     "viewer": "viewer",
-    "viewers": "viewers",
-    "watching": "watching"
+    "viewers": "viewers"
   },
   "epg": {
     "title": "Program Guide (EPG)",
     "liveNow": "Live Now",
     "upcoming": "Up Next",
     "noSchedule": "No schedule information available for this channel.",
-    "loading": "Loading TV Guide...",
     "minsLeft": "mins left",
-    "startsAt": "Starts at",
     "refresh": "Refresh Guide"
   }
 }
