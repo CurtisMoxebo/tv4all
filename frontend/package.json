@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -19,7 +20,8 @@
     "react-dom": "^18.3.1",
     "react-i18next": "^17.1.5",
     "react-router-dom": "^7.18.4",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "tv4all": "file:.."
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",
@@ -29,6 +31,7 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^4.1.12",
     "jsdom": "^29.1.1",
     "typescript": "^5.7.3",
     "vite": "^6.1.0",

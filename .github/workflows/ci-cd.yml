@@ -16,10 +16,10 @@ permissions:
 
 jobs:
   # =============================================================
-  # 1. Backend Regression Tests
+  # 1. Backend Regression Tests & Code Coverage
   # =============================================================
   backend-tests:
-    name: "Backend: Regression Tests (76 tests)"
+    name: "Backend: Regression Tests & Coverage (77 tests)"
     runs-on: ubuntu-latest
 
     steps:
@@ -36,16 +36,37 @@ jobs:
       - name: Install backend dependencies
         run: npm --prefix backend ci
 
-      - name: Run Backend Regression Tests (node:test)
-        run: npm --prefix backend test
+      - name: Run Backend Regression Tests & Coverage (node:test + c8)
+        run: npm --prefix backend run test:coverage
 
-      - name: Generate Backend Test Summary
+      - name: Upload backend coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: backend/coverage/
+          retention-days: 14
+
+      - name: Generate Backend Test & Coverage Summary
         if: always()
         run: |
-          echo "### 🟢 Backend Regression Tests" >> $GITHUB_STEP_SUMMARY
-          echo "- **Framework**: Node.js native test runner (\`node:test\`) + \`supertest\`" >> $GITHUB_STEP_SUMMARY
+          echo "### 🟢 Backend Regression Tests & Code Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "- **Framework**: Node.js native test runner (\`node:test\`) + \`supertest\` + \`c8\` (V8 coverage)" >> $GITHUB_STEP_SUMMARY
           echo "- **Test Suites**: 6 suites (M3U Parser, Authentication/JWT, Channels CRUD, Logger, Stream/Health, EPG)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Total Tests**: 76 automated test cases" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total Tests**: 77 automated test cases" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "backend/coverage/coverage-summary.json" ]; then
+            echo "#### 📊 Backend Coverage Summary" >> $GITHUB_STEP_SUMMARY
+            node -e "
+              const s = require('./backend/coverage/coverage-summary.json').total;
+              console.log('| Metric | Covered | Total | Percentage |');
+              console.log('| :--- | :---: | :---: | :---: |');
+              console.log('| **Statements** | ' + s.statements.covered + ' | ' + s.statements.total + ' | ' + s.statements.pct + '% |');
+              console.log('| **Branches** | ' + s.branches.covered + ' | ' + s.branches.total + ' | ' + s.branches.pct + '% |');
+              console.log('| **Functions** | ' + s.functions.covered + ' | ' + s.functions.total + ' | ' + s.functions.pct + '% |');
+              console.log('| **Lines** | ' + s.lines.covered + ' | ' + s.lines.total + ' | ' + s.lines.pct + '% |');
+            " >> $GITHUB_STEP_SUMMARY
+          fi
 
   # =============================================================
   # 2. Backend Build
@@ -88,10 +109,10 @@ jobs:
           retention-days: 7
 
   # =============================================================
-  # 3. Frontend Regression Tests
+  # 3. Frontend Regression Tests & Code Coverage
   # =============================================================
   frontend-tests:
-    name: "Frontend: Regression Tests (42 tests)"
+    name: "Frontend: Regression Tests & Coverage (44 tests)"
     runs-on: ubuntu-latest
 
     steps:
@@ -108,16 +129,37 @@ jobs:
       - name: Install frontend dependencies
         run: npm --prefix frontend ci
 
-      - name: Run Frontend Regression Tests (Vitest)
-        run: npm --prefix frontend test
+      - name: Run Frontend Regression Tests & Coverage (Vitest)
+        run: npm --prefix frontend run test:coverage
 
-      - name: Generate Frontend Test Summary
+      - name: Upload frontend coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-report
+          path: frontend/coverage/
+          retention-days: 14
+
+      - name: Generate Frontend Test & Coverage Summary
         if: always()
         run: |
-          echo "### 🟢 Frontend Regression Tests" >> $GITHUB_STEP_SUMMARY
-          echo "- **Framework**: Vitest + React Testing Library + jsdom" >> $GITHUB_STEP_SUMMARY
+          echo "### 🟢 Frontend Regression Tests & Code Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "- **Framework**: Vitest + React Testing Library + jsdom + V8 coverage" >> $GITHUB_STEP_SUMMARY
           echo "- **Test Suites**: 12 suites (Components, Pages, Context, i18n, EPG)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Total Tests**: 42 automated test cases" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total Tests**: 44 automated test cases" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "frontend/coverage/coverage-summary.json" ]; then
+            echo "#### 📊 Frontend Coverage Summary" >> $GITHUB_STEP_SUMMARY
+            node -e "
+              const s = require('./frontend/coverage/coverage-summary.json').total;
+              console.log('| Metric | Covered | Total | Percentage |');
+              console.log('| :--- | :---: | :---: | :---: |');
+              console.log('| **Statements** | ' + s.statements.covered + ' | ' + s.statements.total + ' | ' + s.statements.pct + '% |');
+              console.log('| **Branches** | ' + s.branches.covered + ' | ' + s.branches.total + ' | ' + s.branches.pct + '% |');
+              console.log('| **Functions** | ' + s.functions.covered + ' | ' + s.functions.total + ' | ' + s.functions.pct + '% |');
+              console.log('| **Lines** | ' + s.lines.covered + ' | ' + s.lines.total + ' | ' + s.lines.pct + '% |');
+            " >> $GITHUB_STEP_SUMMARY
+          fi
 
   # =============================================================
   # 4. Frontend Build

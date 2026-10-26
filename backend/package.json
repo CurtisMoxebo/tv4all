@@ -7,7 +7,19 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "test": "tsx tests/run.ts"
+    "test": "tsx tests/run.ts",
+    "test:coverage": "c8 --reporter=text --reporter=text-summary --reporter=html --reporter=lcov tsx tests/run.ts"
+  },
+  "c8": {
+    "all": true,
+    "include": [
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "tests/**",
+      "dist/**",
+      "node_modules/**"
+    ]
   },
   "keywords": [
     "iptv",
@@ -23,7 +35,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "tv4all": "file:.."
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -31,6 +44,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.17.19",
     "@types/supertest": "^7.2.1",
+    "c8": "^12.0.0",
     "supertest": "^7.3.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
