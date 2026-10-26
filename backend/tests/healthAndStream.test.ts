@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 import request from 'supertest';
 import { app } from '../src/index';
 import { authService } from '../src/services/authService';
+import { BroadcastManager } from '../src/services/broadcast/BroadcastManager';
+import { Channel } from '../src/types/channel';
 
 describe('Health, API Info & Stream Status Regression Tests', () => {
   const token = authService.generateToken('tv4alladmin', 'admin');
@@ -68,6 +70,64 @@ describe('Health, API Info & Stream Status Regression Tests', () => {
       assert.equal(res.body.status, 'idle');
       assert.equal(res.body.active, false);
       assert.equal(res.body.viewersCount, 0);
+    });
+
+    it('GET /api/stream/:channelId should return 404 for non-existent channel', async () => {
+      const res = await request(app)
+        .get('/api/stream/non-existent-channel-id')
+        .set('Authorization', `Bearer ${token}`);
+
+      assert.equal(res.status, 404);
+      assert.ok(res.body.message.includes('not found'));
+    });
+
+    it('DELETE /api/stream/:channelId should return 404 when stopping non-existent broadcast', async () => {
+      const res = await request(app)
+        .delete('/api/stream/non-existent-broadcast')
+        .set('Authorization', `Bearer ${token}`);
+
+      assert.equal(res.status, 404);
+      assert.ok(res.body.error);
+    });
+  });
+
+  describe('BroadcastManager Unit Tests', () => {
+    it('should manage lifecycle of channel broadcasts', () => {
+      const manager = new BroadcastManager();
+      const testChannel: Channel = {
+        id: 'test-bc-channel',
+        name: 'Test BC Channel',
+        logo: '',
+        group: 'General',
+        url: 'http://127.0.0.1:9999/dummy.m3u8'
+      };
+
+      assert.equal(manager.getActiveBroadcasts().length, 0);
+
+      // Create broadcast
+      const broadcast = manager.getOrCreateBroadcast(testChannel);
+      assert.ok(broadcast);
+      assert.equal(broadcast.channelId, 'test-bc-channel');
+
+      // Fetch broadcast
+      const fetched = manager.getBroadcast('test-bc-channel');
+      assert.equal(fetched, broadcast);
+
+      // Active broadcasts list
+      const actives = manager.getActiveBroadcasts();
+      assert.equal(actives.length, 1);
+      assert.equal(actives[0].channelId, 'test-bc-channel');
+
+      // Stop single broadcast
+      const stopped = manager.stopBroadcast('test-bc-channel');
+      assert.equal(stopped, true);
+      assert.equal(manager.getBroadcast('test-bc-channel'), undefined);
+
+      // Stop all on empty/populated
+      const bc2 = manager.getOrCreateBroadcast(testChannel);
+      assert.ok(bc2);
+      manager.stopAll();
+      assert.equal(manager.getActiveBroadcasts().length, 0);
     });
   });
 

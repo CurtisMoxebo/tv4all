@@ -54,4 +54,43 @@ describe('FilterPopover Component Regression Tests', () => {
 
     expect(handleSelectSort).toHaveBeenCalledWith('asc');
   });
+
+  it('displays active filter notification dot and resets filters when "Reset all" is clicked', () => {
+    const handleSelectCategory = vi.fn();
+    const handleSelectSortBy = vi.fn();
+
+    renderWithProviders(
+      <FilterPopover
+        {...defaultProps}
+        selectedCategory="Sports"
+        sortBy="desc"
+        onSelectCategory={handleSelectCategory}
+        onSelectSortBy={handleSelectSortBy}
+      />
+    );
+
+    // Open popover
+    fireEvent.click(screen.getByTitle('Filter channels'));
+
+    const resetBtn = screen.getByRole('button', { name: /Reset all/i });
+    expect(resetBtn).toBeInTheDocument();
+
+    fireEvent.click(resetBtn);
+
+    expect(handleSelectCategory).toHaveBeenCalledWith('all');
+    expect(handleSelectSortBy).toHaveBeenCalledWith('default');
+  });
+
+  it('closes popover when user clicks outside the panel', () => {
+    renderWithProviders(<FilterPopover {...defaultProps} />);
+
+    // Open popover
+    fireEvent.click(screen.getByTitle('Filter channels'));
+    expect(screen.getByText('Filters')).toBeInTheDocument();
+
+    // Click outside on document body
+    fireEvent.mouseDown(document.body);
+
+    expect(screen.queryByText('Filters')).not.toBeInTheDocument();
+  });
 });

@@ -276,5 +276,37 @@ describe('Channel Routes & Service Regression Tests', () => {
       assert.equal(res.status, 200);
       assert.ok(Array.isArray(res.body));
     });
+
+    it('should support GET /api/channels/groups?detailed=true alias', async () => {
+      const res = await request(app)
+        .get('/api/channels/groups?detailed=true')
+        .set('Authorization', `Bearer ${ctx.userToken}`);
+
+      assert.equal(res.status, 200);
+      assert.ok(Array.isArray(res.body));
+      assert.ok(res.body.some((g: any) => typeof g.name === 'string' && typeof g.count === 'number'));
+    });
+  });
+
+  describe('GET /api/channels/:id', () => {
+    it('should return specific channel details by ID', async () => {
+      const res = await request(app)
+        .get('/api/channels/TF1.fr')
+        .set('Authorization', `Bearer ${ctx.userToken}`);
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.id, 'TF1.fr');
+      assert.equal(res.body.name, 'TF1 HD');
+      assert.ok('group' in res.body);
+    });
+
+    it('should return 404 when channel ID is not found', async () => {
+      const res = await request(app)
+        .get('/api/channels/nonexistent-channel-xyz')
+        .set('Authorization', `Bearer ${ctx.userToken}`);
+
+      assert.equal(res.status, 404);
+      assert.ok(res.body.error);
+    });
   });
 });

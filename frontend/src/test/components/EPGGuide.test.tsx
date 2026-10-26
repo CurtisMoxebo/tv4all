@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '../test-utils';
 import { EPGGuide } from '../../components/EPGGuide';
 import { Channel } from '../../types/channel';
@@ -98,6 +98,42 @@ describe('EPGGuide Component Regression Tests', () => {
     await waitFor(() => {
       expect(screen.getByText(/No schedule information available/i)).toBeInTheDocument();
     });
+  });
+
+  it('handles network error during EPG fetch gracefully', async () => {
+    vi.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('Network error'));
+
+    renderWithProviders(
+      <EPGGuide channel={sampleChannel} token="test-token" />
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/No schedule information available/i).length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it('refetches EPG when user clicks the refresh guide button', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => sampleEpgData
+    } as Response);
+
+    renderWithProviders(
+      <EPGGuide channel={sampleChannel} token="test-token" />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('28 Minutes')).toBeInTheDocument();
+    });
+
+    const refreshBtn = screen.getByRole('button', { name: /Refresh Guide/i });
+    expect(refreshBtn).toBeInTheDocument();
+
+    const callCountBefore = fetchSpy.mock.calls.length;
+    fireEvent.click(refreshBtn);
+
+    expect(fetchSpy.mock.calls.length).toBeGreaterThan(callCountBefore);
   });
 });
 

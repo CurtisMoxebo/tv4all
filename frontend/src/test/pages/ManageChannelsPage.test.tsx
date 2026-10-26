@@ -114,4 +114,49 @@ describe('ManageChannelsPage Regression Tests', () => {
     fireEvent.click(screen.getByText('Cancel'));
     expect(screen.queryByText(/Are you sure you want to delete/i)).not.toBeInTheDocument();
   });
+
+  it('successfully deletes channel and displays success message when confirmed in modal', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(async (_url: any, options?: any) => {
+      if (options?.method === 'DELETE') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            message: 'Channel deleted successfully',
+            channel: sampleChannels[0]
+          })
+        } as Response;
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => sampleChannels
+      } as Response;
+    });
+
+    renderWithProviders(<ManageChannelsPage />, {
+      auth: { isAuthenticated: true, isAdmin: true }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('France 2 HD')).toBeInTheDocument();
+    });
+
+    // Open delete modal
+    const deleteBtn = screen.getAllByTitle('Delete channel from playlist')[0];
+    fireEvent.click(deleteBtn);
+
+    // Confirm deletion inside modal
+    const confirmBtn = screen.getByRole('button', { name: 'Confirm Delete' });
+    fireEvent.click(confirmBtn);
+
+    // Verify channel deletion was requested
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining('/channels/France2.fr'),
+        expect.objectContaining({ method: 'DELETE' })
+      );
+      expect(screen.getByText(/Channel "France 2 HD" was removed from the playlist/i)).toBeInTheDocument();
+    });
+  });
 });

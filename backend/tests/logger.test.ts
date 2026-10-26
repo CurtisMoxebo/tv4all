@@ -42,6 +42,31 @@ describe('Logger Service & Routes Regression Tests', () => {
       assert.ok(content.includes('Simulated failure'));
       assert.ok(content.includes('[ERROR]'));
     });
+
+    it('should write warn log levels properly', async () => {
+      const warnMsg = `Warn message test ${Date.now()}`;
+      loggerService.warn(warnMsg, '192.168.1.50');
+
+      await new Promise(resolve => setTimeout(resolve, 60));
+
+      const content = loggerService.readTodayLogs();
+      assert.ok(content.includes(warnMsg));
+      assert.ok(content.includes('[WARN]'));
+      assert.ok(content.includes('[IP: 192.168.1.50]'));
+    });
+
+    it('should normalize client IP addresses correctly', () => {
+      const mockReqIpv6 = { headers: {}, socket: { remoteAddress: '::1' } } as any;
+      assert.equal(loggerService.getClientIp(mockReqIpv6), '127.0.0.1');
+
+      const mockReqMapped = { headers: {}, socket: { remoteAddress: '::ffff:127.0.0.1' } } as any;
+      assert.equal(loggerService.getClientIp(mockReqMapped), '127.0.0.1');
+
+      const mockReqForwarded = {
+        headers: { 'x-forwarded-for': '203.0.113.195, 70.41.3.18' }
+      } as any;
+      assert.equal(loggerService.getClientIp(mockReqForwarded), '203.0.113.195');
+    });
   });
 
   describe('Log HTTP Endpoints', () => {

@@ -87,4 +87,50 @@ describe('HomePage Regression Tests', () => {
 
     expect(document.title).toBe('TV4ALL - France 2 HD');
   });
+
+  it('shows "No channels found" empty state when search query matches nothing', async () => {
+    renderWithProviders(<HomePage />, {
+      auth: { isAuthenticated: true, isAdmin: false }
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('France 2 HD').length).toBeGreaterThanOrEqual(1);
+    });
+
+    // Enter non-matching query in search input
+    const searchInputs = screen.getAllByPlaceholderText(/Search channels by name or ID/i);
+    fireEvent.change(searchInputs[0], { target: { value: 'NonExistentXYZChannel' } });
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/No channels found/i).length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it('toggles mobile drawer open and closed when drawer trigger is clicked', async () => {
+    const { container } = renderWithProviders(<HomePage />, {
+      auth: { isAuthenticated: true, isAdmin: false }
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('France 2 HD').length).toBeGreaterThanOrEqual(1);
+    });
+
+    const drawerTrigger = screen.getByLabelText('Toggle channels drawer');
+    expect(drawerTrigger).toBeInTheDocument();
+
+    const aside = container.querySelector('aside');
+    expect(aside).toHaveClass('-translate-x-full');
+
+    // Click to open drawer
+    fireEvent.click(drawerTrigger);
+    expect(aside).toHaveClass('translate-x-0');
+
+    // Close button appears in mobile drawer
+    const closeBtn = screen.getByLabelText('Close channels drawer');
+    expect(closeBtn).toBeInTheDocument();
+
+    // Click close button
+    fireEvent.click(closeBtn);
+    expect(aside).toHaveClass('-translate-x-full');
+  });
 });

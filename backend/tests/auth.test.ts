@@ -53,6 +53,13 @@ describe('Authentication & Authorization Regression Tests', () => {
         authService.verifyToken('invalid.token.signature');
       });
     });
+
+    it('should validate credentials correctly via validateCredentials helper', () => {
+      assert.equal(authService.validateCredentials('tv4alladmin', '123123'), true);
+      assert.equal(authService.validateCredentials('tv4all', '123'), true);
+      assert.equal(authService.validateCredentials('tv4all', 'wrongpassword'), false);
+      assert.equal(authService.validateCredentials('', ''), false);
+    });
   });
 
   describe('Auth HTTP Endpoints (supertest)', () => {
