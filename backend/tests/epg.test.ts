@@ -99,6 +99,7 @@ describe('EPG Service & Routes Regression Tests', () => {
       assert.equal(res.body.channelId, 'Arte.fr');
       assert.ok('current' in res.body);
       assert.ok(Array.isArray(res.body.upcoming));
+      assert.equal(typeof res.body.viewersCount, 'number');
     });
 
     it('POST /api/epg/upload should reject non-admin users with 403', async () => {

@@ -14,8 +14,8 @@ export interface ChannelEPGResponse {
   channelId: string;
   channelName?: string;
   hasEpg: boolean;
+  viewersCount?: number;
   current: EPGProgram | null;
   upcoming: EPGProgram[];
   updatedAt: string;
 }
-

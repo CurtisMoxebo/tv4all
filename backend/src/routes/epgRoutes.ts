@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { epgService } from '../services/epgService';
+import { broadcastManager } from '../services/broadcast/BroadcastManager';
 import { requireAdmin } from '../middleware/authMiddleware';
 
 const router = Router();
 
 /**
  * GET /api/epg/:channelId
- * Returns the current program (with progress) and upcoming schedule for a channel.
+ * Returns the current program (with progress), live viewer count, and upcoming schedule for a channel.
  */
 router.get('/:channelId', (req: Request, res: Response) => {
   const { channelId } = req.params;
@@ -18,7 +19,13 @@ router.get('/:channelId', (req: Request, res: Response) => {
   }
 
   const epg = epgService.getChannelEPG(channelId, channelName);
-  res.json(epg);
+  const broadcast = broadcastManager.getBroadcast(channelId);
+  const viewersCount = broadcast ? broadcast.clientCount : 0;
+
+  res.json({
+    ...epg,
+    viewersCount
+  });
 });
 
 /**
