@@ -66,6 +66,8 @@ jobs:
               console.log('| **Functions** | ' + s.functions.covered + ' | ' + s.functions.total + ' | ' + s.functions.pct + '% |');
               console.log('| **Lines** | ' + s.lines.covered + ' | ' + s.lines.total + ' | ' + s.lines.pct + '% |');
             " >> $GITHUB_STEP_SUMMARY
+          else
+            echo "*(Coverage report artifact uploaded: see backend-coverage-report below)*" >> $GITHUB_STEP_SUMMARY
           fi
 
   # =============================================================
@@ -159,6 +161,8 @@ jobs:
               console.log('| **Functions** | ' + s.functions.covered + ' | ' + s.functions.total + ' | ' + s.functions.pct + '% |');
               console.log('| **Lines** | ' + s.lines.covered + ' | ' + s.lines.total + ' | ' + s.lines.pct + '% |');
             " >> $GITHUB_STEP_SUMMARY
+          else
+            echo "*(Coverage report artifact uploaded: see frontend-coverage-report below)*" >> $GITHUB_STEP_SUMMARY
           fi
 
   # =============================================================

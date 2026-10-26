@@ -8,10 +8,17 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "test": "tsx tests/run.ts",
-    "test:coverage": "c8 --reporter=text --reporter=text-summary --reporter=html --reporter=lcov tsx tests/run.ts"
+    "test:coverage": "c8 --reporter=text --reporter=text-summary --reporter=json-summary --reporter=html --reporter=lcov tsx tests/run.ts"
   },
   "c8": {
     "all": true,
+    "reporter": [
+      "text",
+      "text-summary",
+      "json-summary",
+      "html",
+      "lcov"
+    ],
     "include": [
       "src/**/*.ts"
     ],
@@ -35,8 +42,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.3",
-    "tv4all": "file:.."
+    "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
